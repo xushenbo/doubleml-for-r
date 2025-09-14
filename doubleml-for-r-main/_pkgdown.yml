@@ -1,0 +1,74 @@
+destination: docs
+
+home:
+  title: DoubleML - Double Machine Learning with R
+  links:
+  - text: Download
+    href: https://github.com/DoubleML/doubleml-for-r/
+
+development:
+  mode: devel
+
+toc:
+  depth: 3
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left:  [home, userguide, getstarted, reference, articles]
+    right: [github]
+  components:
+    home: ~
+    userguide:
+      text: User Guide
+      icon: fa fa-file-alt
+      href: https://docs.doubleml.org/
+    reference:
+      text: Reference
+      href: reference/index.html
+    getstarted:
+      text: Get started
+      href: articles/getstarted.html
+    articles:
+      text: Articles
+      menu:
+        - text: Install DoubleML
+          href: articles/install.html
+        - text: Introduction to Double Machine Learning
+          href: articles/Introduction_to_DoubleML.html
+    news:
+      text: Release Notes
+      href: https://docs.doubleml.org/stable/release/release.html
+
+reference:
+  - title: Double machine learning data class
+    contents:
+      - DoubleMLData
+      - DoubleMLClusterData
+      - double_ml_data_from_data_frame
+      - double_ml_data_from_matrix
+  - title: Abstract base class for double machine learning models
+    contents:
+      - DoubleML
+  - title: Double machine learning models
+    contents:
+      - DoubleMLPLR
+      - DoubleMLPLIV
+      - DoubleMLIRM
+      - DoubleMLIIVM
+      - DoubleMLSSM
+  - title: Datasets module
+    contents:
+      - fetch_401k
+      - fetch_bonus
+  - title: Datasets generators
+    contents:
+      - make_plr_CCDDHNR2018
+      - make_pliv_CHS2015
+      - make_irm_data
+      - make_iivm_data
+      - make_plr_turrell2018
+      - make_pliv_multiway_cluster_CKMS2021
+      - make_ssm_data
