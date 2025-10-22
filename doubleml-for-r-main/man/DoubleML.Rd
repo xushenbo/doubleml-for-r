@@ -45,7 +45,10 @@ Other DoubleML:
 \code{\link{DoubleMLIRM}},
 \code{\link{DoubleMLPLIV}},
 \code{\link{DoubleMLPLR}},
-\code{\link{DoubleMLSSM}}
+\code{\link{DoubleMLSSM}},
+\code{\link{DoubleMLSurvival}},
+\code{\link{double_ml_rmst}()},
+\code{\link{double_ml_survival_prob}()}
 }
 \concept{DoubleML}
 \section{Active bindings}{

@@ -71,7 +71,10 @@ Other DoubleML:
 \code{\link{DoubleMLIIVM}},
 \code{\link{DoubleMLIRM}},
 \code{\link{DoubleMLPLIV}},
-\code{\link{DoubleMLSSM}}
+\code{\link{DoubleMLSSM}},
+\code{\link{DoubleMLSurvival}},
+\code{\link{double_ml_rmst}()},
+\code{\link{double_ml_survival_prob}()}
 }
 \concept{DoubleML}
 \section{Super class}{
@@ -138,7 +141,7 @@ extension packages \href{https://mlr3learners.mlr-org.com/}{mlr3learners} or
 \href{https://mlr3extralearners.mlr-org.com/}{mlr3extralearners}.
 Alternatively, a \code{\link[mlr3:Learner]{Learner}} object with public field
 \code{task_type = "regr"} can be passed, for example of class
-\code{\link[mlr3pipelines:mlr_learners_graph]{GraphLearner}}. The learner can possibly
+\code{\link[mlr3pipelines:GraphLearner]{GraphLearner}}. The learner can possibly
 be passed with specified parameters, for example
 \code{lrn("regr.cv_glmnet", s = "lambda.min")}. \cr
 \code{ml_l} refers to the nuisance function \eqn{l_0(X) = E[Y|X]}.}
@@ -156,7 +159,7 @@ For binary treatment variables, an object of the class
 Alternatively, a \code{\link[mlr3:Learner]{Learner}} object with public field
 \code{task_type = "regr"} or \code{task_type = "classif"} can be passed,
 respectively, for example of class
-\code{\link[mlr3pipelines:mlr_learners_graph]{GraphLearner}}. \cr
+\code{\link[mlr3pipelines:GraphLearner]{GraphLearner}}. \cr
 \code{ml_m} refers to the nuisance function \eqn{m_0(X) = E[D|X]}.}
 
 \item{\code{ml_g}}{(\code{\link[mlr3:LearnerRegr]{LearnerRegr}},
@@ -167,7 +170,7 @@ extension packages \href{https://mlr3learners.mlr-org.com/}{mlr3learners} or
 \href{https://mlr3extralearners.mlr-org.com/}{mlr3extralearners}.
 Alternatively, a \code{\link[mlr3:Learner]{Learner}} object with public field
 \code{task_type = "regr"} can be passed, for example of class
-\code{\link[mlr3pipelines:mlr_learners_graph]{GraphLearner}}. The learner can possibly
+\code{\link[mlr3pipelines:GraphLearner]{GraphLearner}}. The learner can possibly
 be passed with specified parameters, for example
 \code{lrn("regr.cv_glmnet", s = "lambda.min")}. \cr
 \code{ml_g} refers to the nuisance function \eqn{g_0(X) = E[Y - D\theta_0|X]}.
