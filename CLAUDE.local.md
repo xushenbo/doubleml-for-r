@@ -1,76 +1,40 @@
 # DoubleML Survival Analysis Integration
 
 ## Project Overview
-Integrating survival analysis and competing risk methods from `/original` into the DoubleML R package as a contributor.
+Extending survival analysis and competing risk methods from `/original` into the DoubleML R package.
 
-## Development Environment
+## Environment
 - Working Directory: `/Users/xushenbo/Downloads/Github/DoubleML`
 - Branch: `survival_outcome_integration`
 - Target Package: `doubleml-for-r-main/`
 
-## Implementation Plan
+## Key Constraints
+- **ML Framework**: SuperLearner (treatment), survSuperLearner (survival/censoring) - mlr3 NOT ALLOWED
+- **No placeholders**: Always use real ML, never dummy values like `matrix(0.5, n, m)`
+- **Data Generation**: Use EXACT DGP from `@original/simulation/survival` - do NOT create new/custom DGP
+- **Do NOT create code files unless explicitly requested**
+- **Preserve original implementations**: Keep function signatures, logic flow, and mathematical formulas unchanged
 
-### File Structure
-```
-doubleml-for-r-main/
-├── R/
-│   ├── double_ml_survival.R        # Base survival class
-│   ├── double_ml_survival_prob.R   # Survival probability estimation
-│   ├── double_ml_rmst.R           # Restricted mean survival time
-│   ├── double_ml_competing.R      # Base competing risks class
-│   ├── double_ml_cifj.R           # Cumulative incidence function
-│   ├── double_ml_rmtlj.R          # Restricted mean time lost
-│   └── helper_survival.R          # Survival-specific helpers
-├── tests/testthat/
-│   ├── test-double_ml_survival_prob.R
-│   ├── test-double_ml_rmst.R
-│   ├── test-double_ml_cifj.R
-│   └── test-double_ml_rmtlj.R
-└── inst/examples/
-    ├── survival_mlr3_example.R
-    └── survival_superlearner_example.R
-```
+## Development Priorities
+- Test that extended code actually works - functionality over form
+- Follow existing patterns exactly, don't be imaginative or creative
+- Use real ML implementations in tests (no placeholders)
+- Check `@original/simulation` for test parameters (sample size, admin.cens, taus, etc.)
 
-### Key Design Decisions
-1. **Dual Pipeline Support**: Users can choose between mlr3proba and survSuperLearner
-2. **Preserve Original Methods**: Keep statistical methods from `original/estimators/` unchanged
-3. **R6 Class Structure**: Adapt to DoubleML's class hierarchy while minimizing changes
-4. **No Score Functions**: Maintain original influence function calculations without conversion
+## Implementation Status
+**✅ Survival Analysis (Complete):**
+- `DoubleMLSurvival` (base class)
+- `DoubleMLSurvivalProb` (survival probability)
+- `DoubleMLRMST` (restricted mean survival time)
+- Inference infrastructure: `inference_point.R`, `inference_curve.R`
+- ML nuisance functions: `survival_nuisance.R` (combined S and G estimation)
 
-### ML Framework Options
-- **mlr3 framework**: Uses mlr3 for treatment model, mlr3proba for survival/censoring models
-- **SuperLearner framework**: Uses SuperLearner for treatment model, survSuperLearner for survival/censoring models
-
-### Source Files to Migrate
-- `original/estimators/double_ml_survival.R`: Contains `double_ml_survival_prob()`, `double_ml_rmst()`
-- `original/estimators/double_ml_competing.R`: Contains `double_ml_cifj()`, `double_ml_rmtlj()`
-
-## Development Commands
+**❌ Competing Risks (Pending):**
+- `DoubleMLCompeting` (base class - placeholder)
+- `DoubleMLCIFJ` (cumulative incidence - placeholder)
+- `DoubleMLRMTLJ` (restricted mean time lost - placeholder)
 
 ## Notes
-- Do not modify existing files in doubleml-for-r-main/, consider adding
-- Do not modify existing files in original/
+- All tests run code under `/Users/xushenbo/Downloads/Github/DoubleML/doubleml-for-r-main`
+- Do not modify existing files in `original/`
 - Maintain compatibility with existing DoubleML API
-- Focus on class structure adaptation, not algorithm changes
-- **All tests should run code under /Users/xushenbo/Downloads/Github/DoubleML/doubleml-for-r-main**
-
-## Contributing Policy
-
-From `doubleml-for-r-main/CONTRIBUTING.md`:
-
-### Code Requirements
-- **Code passes `R CMD check`** and all unit tests: `devtools::check()`
-- **Unit tests mandatory** for enhancements/new features: `devtools::test()`
-
-### New Model Class Contributions
-- **Abstract base class `DoubleML`** implements core functionality via linear Neyman orthogonal scores
-- **Only need to specify**:
-  - All nuisance functions for estimation (regressions/classifications)
-  - Score components for Neyman orthogonal score function
-- **All other functionality inherited** automatically from base class
-
-### Documentation
-- **API docs**: Generated with **roxygen2** and **pkgdown**
-- **Build docs**: `devtools::document()`
-- **Build website**: `pkgdown::build_site()`
-- **User guide/examples**: Separate repo [doubleml-docs](https://github.com/DoubleML/doubleml-docs)

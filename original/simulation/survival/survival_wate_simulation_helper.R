@@ -10,7 +10,49 @@ aft <- function(data.df, betas, sigma, n)
 
 
 # dml
-rmst_extract_avarage <- function(train.ueif.a1, train.ueif.a0, estimation.ueif.a1, estimation.ueif.a0, train.time, estimation.time, tau){
+survival_prob_extract_average <- function(train.ueif.a1, train.ueif.a0, estimation.ueif.a1, estimation.ueif.a0, train.time, estimation.time, tau){
+  ## point estimate
+  # a=0
+  ueif.a0 <- merge(merge(data.frame(t=matrix(train.time), t(train.ueif.a0)), data.frame(t=sort(unique(c(train.time, estimation.time)))), all=TRUE, by="t"),
+                   merge(data.frame(t=matrix(estimation.time), t(estimation.ueif.a0)), data.frame(t=sort(unique(c(train.time, estimation.time)))), all=TRUE, by="t"), all=TRUE, by="t")
+  ueif.a0 <- approxTime(ueif.a0, xout=ueif.a0$t)
+  if(sum(is.na(ueif.a0))>0)
+  {ueif.a0 <- approxTime(rbind(0, ueif.a0), xout=c(0, sort(unique(c(train.time, estimation.time)))))[-1,]}
+  ueif.a0 <- t(ueif.a0[,-1])
+
+  # Calculate point estimates with cummin for monotonic decreasing survival probabilities
+  estimate.a0.raw <- colMeans(ueif.a0, na.rm = TRUE)
+  estimate.a0 <- cummin(estimate.a0.raw)
+  ueif.df <- data.frame(t=sort(unique(c(train.time, estimation.time)))[1:length(estimate.a0)], estimate.a0=estimate.a0)
+
+  # a=1
+  ueif.a1 <- merge(merge(data.frame(t=matrix(train.time), t(train.ueif.a1)), data.frame(t=sort(unique(c(train.time, estimation.time)))), all=TRUE, by="t"),
+                   merge(data.frame(t=matrix(estimation.time), t(estimation.ueif.a1)), data.frame(t=sort(unique(c(train.time, estimation.time)))), all=TRUE, by="t") , all=TRUE, by="t")
+  ueif.a1 <- approxTime(ueif.a1, xout=ueif.a1$t)
+  if(sum(is.na(ueif.a1))>0)
+  {ueif.a1 <- approxTime(rbind(0, ueif.a1), xout=c(0, sort(unique(c(train.time, estimation.time)))))[-1,]}
+  ueif.a1 <- t(ueif.a1[,-1])
+
+  # Calculate point estimates with cummin for monotonic decreasing survival probabilities
+  estimate.a1.raw <- colMeans(ueif.a1, na.rm = TRUE)
+  estimate.a1 <- cummin(estimate.a1.raw)
+  ueif.df$estimate.a1 <- estimate.a1[1:nrow(ueif.df)]
+
+  ueif.df <- approxTime(ueif.df, xout=ueif.df$t)
+  ueif.df$estimate.diff <- ueif.df$estimate.a1-ueif.df$estimate.a0
+
+  ## standard error - using cummax for monotonic increasing variance over time
+  ueif.df$estimate.a0.se <- cummax(sqrt(colMeans((ueif.a0-matrix(ueif.df$estimate.a0, nrow=nrow(ueif.a0), ncol=ncol(ueif.a0), byrow=TRUE))^2))/sqrt(nrow(ueif.a0)))
+  ueif.df$estimate.a1.se <- cummax(sqrt(colMeans((ueif.a1-matrix(ueif.df$estimate.a1, nrow=nrow(ueif.a1), ncol=ncol(ueif.a1), byrow=TRUE))^2))/sqrt(nrow(ueif.a1)))
+  ueif.df$estimate.diff.se <- cummax(sqrt(colMeans(((ueif.a1-ueif.a0)-matrix(ueif.df$estimate.diff, nrow=nrow(ueif.a0), ncol=ncol(ueif.a0), byrow=TRUE))^2))/sqrt(nrow(ueif.a0)))
+
+  # Use <= for right-continuous step function (cadlag)
+  tau.ind <- max(which(ueif.df$t <= tau))
+  ueif.df <- ueif.df[tau.ind,]
+  return(ueif.df[,-1])
+}
+
+rmst_extract_average <- function(train.ueif.a1, train.ueif.a0, estimation.ueif.a1, estimation.ueif.a0, train.time, estimation.time, tau){
   ## point estimate
   # a=0
   ueif.a0 <- merge(merge(data.frame(t=matrix(train.time), t(train.ueif.a0)), data.frame(t=sort(unique(c(train.time, estimation.time)))), all=TRUE, by="t"),
@@ -133,19 +175,19 @@ run_rmst_dml_simulation <- function(nsim, n, admin.cens, time.grid, taus, confou
     dml.result <- lapply(dml.result, "rownames<-", c("dml.rmst.ate", "dml.rmst.ate.trunc", "dml.rmst.ato", "dml.rmst.atm", "dml.rmst.aten"))
     for (j in 1:length(taus))
     {
-      dml.result[[paste0("tau", taus[j])]]["dml.rmst.ate",] <- rmst_extract_avarage(train.ueif.a1=dml.train$dr.integral.mc.ht.driptw.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.driptw.ueif$ueif.a0,
+      dml.result[[paste0("tau", taus[j])]]["dml.rmst.ate",] <- rmst_extract_average(train.ueif.a1=dml.train$dr.integral.mc.ht.driptw.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.driptw.ueif$ueif.a0,
                                                                                            estimation.ueif.a1=dml.estimation$dr.integral.mc.ht.driptw.ueif$ueif.a1, estimation.ueif.a0=dml.estimation$dr.integral.mc.ht.driptw.ueif$ueif.a0,
                                                                                            train.time=sort(unique(train.df$end.time)), estimation.time=sort(unique(estimation.df$end.time)), tau=taus[j])
-      dml.result[[paste0("tau", taus[j])]]["dml.rmst.ate.trunc",] <- rmst_extract_avarage(train.ueif.a1=dml.train$dr.integral.mc.ht.driptw.trunc.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.driptw.trunc.ueif$ueif.a0,
+      dml.result[[paste0("tau", taus[j])]]["dml.rmst.ate.trunc",] <- rmst_extract_average(train.ueif.a1=dml.train$dr.integral.mc.ht.driptw.trunc.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.driptw.trunc.ueif$ueif.a0,
                                                                                                  estimation.ueif.a1=dml.estimation$dr.integral.mc.ht.driptw.trunc.ueif$ueif.a1, estimation.ueif.a0=dml.estimation$dr.integral.mc.ht.driptw.trunc.ueif$ueif.a0,
                                                                                                  train.time=sort(unique(train.df$end.time)), estimation.time=sort(unique(estimation.df$end.time)), tau=taus[j])
-      dml.result[[paste0("tau", taus[j])]]["dml.rmst.ato",] <- rmst_extract_avarage(train.ueif.a1=dml.train$dr.integral.mc.ht.drow.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.drow.ueif$ueif.a0,
+      dml.result[[paste0("tau", taus[j])]]["dml.rmst.ato",] <- rmst_extract_average(train.ueif.a1=dml.train$dr.integral.mc.ht.drow.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.drow.ueif$ueif.a0,
                                                                                          estimation.ueif.a1=dml.estimation$dr.integral.mc.ht.drow.ueif$ueif.a1, estimation.ueif.a0=dml.estimation$dr.integral.mc.ht.drow.ueif$ueif.a0,
                                                                                          train.time=sort(unique(train.df$end.time)), estimation.time=sort(unique(estimation.df$end.time)), tau=taus[j])
-      dml.result[[paste0("tau", taus[j])]]["dml.rmst.atm",] <- rmst_extract_avarage(train.ueif.a1=dml.train$dr.integral.mc.ht.drmw.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.drmw.ueif$ueif.a0,
+      dml.result[[paste0("tau", taus[j])]]["dml.rmst.atm",] <- rmst_extract_average(train.ueif.a1=dml.train$dr.integral.mc.ht.drmw.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.drmw.ueif$ueif.a0,
                                                                                          estimation.ueif.a1=dml.estimation$dr.integral.mc.ht.drmw.ueif$ueif.a1, estimation.ueif.a0=dml.estimation$dr.integral.mc.ht.drmw.ueif$ueif.a0,
                                                                                          train.time=sort(unique(train.df$end.time)), estimation.time=sort(unique(estimation.df$end.time)), tau=taus[j])
-      dml.result[[paste0("tau", taus[j])]]["dml.rmst.aten",] <- rmst_extract_avarage(train.ueif.a1=dml.train$dr.integral.mc.ht.drenw.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.drenw.ueif$ueif.a0,
+      dml.result[[paste0("tau", taus[j])]]["dml.rmst.aten",] <- rmst_extract_average(train.ueif.a1=dml.train$dr.integral.mc.ht.drenw.ueif$ueif.a1, train.ueif.a0=dml.train$dr.integral.mc.ht.drenw.ueif$ueif.a0,
                                                                                           estimation.ueif.a1=dml.estimation$dr.integral.mc.ht.drenw.ueif$ueif.a1, estimation.ueif.a0=dml.estimation$dr.integral.mc.ht.drenw.ueif$ueif.a0,
                                                                                           train.time=sort(unique(train.df$end.time)), estimation.time=sort(unique(estimation.df$end.time)), tau=taus[j])
     }
