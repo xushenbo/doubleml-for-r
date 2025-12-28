@@ -1,4 +1,5 @@
 #' @title Double machine learning for restricted mean survival time (RMST)
+#' @name DoubleMLRMST
 #'
 #' @description
 #' Double machine learning for restricted mean survival time estimation with censoring.
@@ -98,6 +99,8 @@
 #' @param admin.cens Administrative censoring time
 #'
 #' @return List containing ueif.a1 and ueif.a0 (UEIF matrices for each treatment group)
+#' @keywords internal
+#' @noRd
 double_ml_rmst <- function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, freq.time=NULL, admin.cens)
 {
   n <- length(id)

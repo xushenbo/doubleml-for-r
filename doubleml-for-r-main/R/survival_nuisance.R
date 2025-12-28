@@ -4,6 +4,12 @@
 #' survival analysis classes and the SuperLearner/survSuperLearner framework.
 #' These functions handle the training and prediction of survival models,
 #' censoring models, and propensity score models within the DML framework.
+#'
+#' @name survival_nuisance
+#' @importFrom stats approx binomial predict rbinom pnorm qnorm
+#' @importFrom SuperLearner SuperLearner
+#' @importFrom survSuperLearner survSuperLearner
+NULL
 
 #' Fit Survival and Censoring Functions using survSuperLearner
 #'

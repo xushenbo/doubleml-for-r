@@ -1,16 +1,15 @@
 # DoubleML Survival Analysis Integration
 
 ## Project Overview
-Extending survival analysis and competing risk methods from `/original` into the DoubleML R package.
+Refactoring survival analysis and competing risk from `/original` into the DoubleML R package `/doubleml-for-r-main`.
 
 ## Environment
 - Working Directory: `/Users/xushenbo/Downloads/Github/DoubleML`
 - Branch: `survival_outcome_integration`
-- Target Package: `doubleml-for-r-main/`
 
 ## Key Constraints
 - **ML Framework**: SuperLearner (treatment), survSuperLearner (survival/censoring) - mlr3 NOT ALLOWED
-- **No placeholders**: Always use real ML, never dummy values like `matrix(0.5, n, m)`
+- **No placeholders**: Always use real ML, never use place holder dummy values like `matrix(0.5, n, m)`
 - **Data Generation**: Use EXACT DGP from `@original/simulation/survival` - do NOT create new/custom DGP
 - **Do NOT create code files unless explicitly requested**
 - **Preserve original implementations**: Keep function signatures, logic flow, and mathematical formulas unchanged

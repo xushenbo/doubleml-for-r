@@ -2,7 +2,7 @@
 % Please edit documentation in R/survival_nuisance.R
 \name{fit_survival_functions}
 \alias{fit_survival_functions}
-\title{SuperLearner Wrapper Functions for Survival Analysis}
+\title{Fit Survival and Censoring Functions using survSuperLearner}
 \usage{
 fit_survival_functions(
   data,
@@ -39,13 +39,6 @@ fit_survival_functions(
 List with S_a0, S_a1, G_a0, and G_a1 matrices
 }
 \description{
-This file contains wrapper functions to interface between DoubleML's
-survival analysis classes and the SuperLearner/survSuperLearner framework.
-These functions handle the training and prediction of survival models,
-censoring models, and propensity score models within the DML framework.
-Fit Survival and Censoring Functions using survSuperLearner
-}
-\details{
 Wrapper function to fit both event survival functions S(t|X,A) and censoring
 survival functions G(t|X,A) using survSuperLearner framework for both treatment groups.
 This follows the original approach where a single survSuperLearner call produces

@@ -1,4 +1,5 @@
 #' @title Double machine learning for survival probability
+#' @name DoubleMLSurvivalProb
 #'
 #' @description
 #' Double machine learning for survival probability estimation with censoring.

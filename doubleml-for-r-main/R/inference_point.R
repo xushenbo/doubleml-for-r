@@ -1,4 +1,7 @@
 # Helper Functions for Survival Analysis Inference
+#' @importFrom fdrtool gcmlcm
+NULL
+
 # These functions support both survival analysis and competing risks methods
 
 #' Last Observation Carried Forward

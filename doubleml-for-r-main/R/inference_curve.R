@@ -1,4 +1,8 @@
 # Survival Analysis Inference Functions
+#' @importFrom foreach foreach %dopar%
+#' @importFrom magrittr %>%
+NULL
+
 # These functions handle confidence intervals and confidence bands for survival outcomes
 # Based on the inference patterns from the original implementation
 

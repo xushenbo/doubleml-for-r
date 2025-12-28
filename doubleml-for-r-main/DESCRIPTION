@@ -24,7 +24,7 @@ BugReports: https://github.com/DoubleML/doubleml-for-r/issues
 Encoding: UTF-8
 Depends: 
     R (>= 3.5.0)
-Imports: 
+Imports:
     R6 (>= 2.4.1),
     data.table (>= 1.12.8),
     stats,
@@ -36,10 +36,15 @@ Imports:
     clusterGeneration,
     readstata13,
     mlr3learners (>= 0.3.0),
-    mlr3misc
+    mlr3misc,
+    SuperLearner,
+    survSuperLearner,
+    fdrtool,
+    foreach,
+    magrittr
 Roxygen: list(markdown = TRUE, r6 = TRUE)
 RoxygenNote: 7.3.2
-Suggests: 
+Suggests:
     knitr,
     rmarkdown,
     testthat,
@@ -54,7 +59,12 @@ Suggests:
     AER,
     rpart,
     bbotk,
-    mlr3pipelines
+    mlr3pipelines,
+    mgcv,
+    simsurv,
+    MASS,
+    Rfast,
+    doParallel
 VignetteBuilder: knitr
 Collate:
     'double_ml.R'
