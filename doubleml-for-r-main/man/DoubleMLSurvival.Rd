@@ -43,6 +43,7 @@ Other DoubleML:
 \code{\link{DoubleMLIRM}},
 \code{\link{DoubleMLPLIV}},
 \code{\link{DoubleMLPLR}},
+\code{\link{DoubleMLRMST}},
 \code{\link{DoubleMLSSM}},
 \code{\link{DoubleMLSurvivalProb}}
 }
@@ -69,6 +70,7 @@ Other DoubleML:
 \item \href{#method-DoubleMLSurvival-new}{\code{DoubleMLSurvival$new()}}
 \item \href{#method-DoubleMLSurvival-get_time_grid}{\code{DoubleMLSurvival$get_time_grid()}}
 \item \href{#method-DoubleMLSurvival-validate_data}{\code{DoubleMLSurvival$validate_data()}}
+\item \href{#method-DoubleMLSurvival-fit}{\code{DoubleMLSurvival$fit()}}
 \item \href{#method-DoubleMLSurvival-clone}{\code{DoubleMLSurvival$clone()}}
 }
 }
@@ -77,7 +79,6 @@ Other DoubleML:
 <ul>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="bootstrap"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-bootstrap'><code>DoubleML::DoubleML$bootstrap()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="confint"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-confint'><code>DoubleML::DoubleML$confint()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="fit"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-fit'><code>DoubleML::DoubleML$fit()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="get_params"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-get_params'><code>DoubleML::DoubleML$get_params()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="learner_names"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-learner_names'><code>DoubleML::DoubleML$learner_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="p_adjust"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-p_adjust'><code>DoubleML::DoubleML$p_adjust()</code></a></span></li>
@@ -207,6 +208,21 @@ Whether to return detailed validation results. Default is FALSE.}
 }
 \subsection{Returns}{
 List with validation results if detailed=TRUE, otherwise invisible.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DoubleMLSurvival-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLSurvival-fit}{}}}
+\subsection{Method \code{fit()}}{
+Fit the survival analysis model. Overrides base class fit() to bypass
+psi_a/psi_b score decomposition, which does not apply to survival analysis.
+Estimation goes directly: UEIF -> extract_average -> coef/SE.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLSurvival$fit()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+self
 }
 }
 \if{html}{\out{<hr>}}

@@ -4,28 +4,14 @@
 \alias{cifj_extract_average}
 \title{Extract Average Treatment Effect for Cumulative Incidence at Tau}
 \usage{
-cifj_extract_average(
-  train.ueif.a1,
-  train.ueif.a0,
-  estimation.ueif.a1,
-  estimation.ueif.a0,
-  train.time,
-  estimation.time,
-  tau
-)
+cifj_extract_average(ueif.a1.list, ueif.a0.list, time.list, tau)
 }
 \arguments{
-\item{train.ueif.a1}{UEIF matrix for treatment a=1 from training set}
+\item{ueif.a1.list}{List of K UEIF matrices for treatment a=1 (one per fold)}
 
-\item{train.ueif.a0}{UEIF matrix for treatment a=0 from training set}
+\item{ueif.a0.list}{List of K UEIF matrices for treatment a=0 (one per fold)}
 
-\item{estimation.ueif.a1}{UEIF matrix for treatment a=1 from estimation set}
-
-\item{estimation.ueif.a0}{UEIF matrix for treatment a=0 from estimation set}
-
-\item{train.time}{Time points from training set}
-
-\item{estimation.time}{Time points from estimation set}
+\item{time.list}{List of K time grid vectors (one per fold)}
 
 \item{tau}{Time point at which to extract the treatment effect}
 }

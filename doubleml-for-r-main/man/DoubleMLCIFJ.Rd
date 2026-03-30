@@ -35,15 +35,15 @@ library(survSuperLearner)
 
 # Generate competing risks data
 set.seed(123)
-data <- make_competing_data(n_obs = 2000, admin_cens = 10)
+data = make_competing_data(n_obs = 2000, admin_cens = 10)
 
 # Define learner libraries
-ml_g_surv <- c("survSL.km", "survSL.coxph")
-ml_g_cens <- c("survSL.km", "survSL.coxph")
-ml_m <- c("SL.mean", "SL.glm")
+ml_g_surv = c("survSL.km", "survSL.coxph")
+ml_g_cens = c("survSL.km", "survSL.coxph")
+ml_m = c("SL.mean", "SL.glm")
 
 # Estimate CIF treatment effect
-dml_cifj <- DoubleMLCIFJ$new(
+dml_cifj = DoubleMLCIFJ$new(
   data,
   ml_g_surv = ml_g_surv,
   ml_g_surv_j = ml_g_surv,
@@ -69,13 +69,23 @@ print(dml_cifj$se)
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{coef}}{Treatment effect estimate(s)}
+\item{\code{coef}}{Treatment effect estimate (from extract_average).
+For multiple tau, returns the first tau's estimate; use cifj_estimates for all.}
 
-\item{\code{se}}{Standard error of treatment effect estimate(s)}
+\item{\code{se}}{Standard error of treatment effect estimate (from extract_average).
+For multiple tau, returns the first tau's SE; use cifj_estimates for all.}
 
 \item{\code{tau}}{Evaluation time point(s)}
 
 \item{\code{cifj_estimates}}{All CIF estimates and standard errors}
+
+\item{\code{sep_direct_astar1_estimates}}{Separable direct effect estimates (A*=1)}
+
+\item{\code{sep_indirect_astar1_estimates}}{Separable indirect effect estimates (A*=1)}
+
+\item{\code{sep_direct_astar0_estimates}}{Separable direct effect estimates (A*=0)}
+
+\item{\code{sep_indirect_astar0_estimates}}{Separable indirect effect estimates (A*=0)}
 }
 \if{html}{\out{</div>}}
 }
@@ -83,11 +93,15 @@ print(dml_cifj$se)
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-DoubleMLCIFJ-new}{\code{DoubleMLCIFJ$new()}}
-\item \href{#method-DoubleMLCIFJ-score_elements}{\code{DoubleMLCIFJ$score_elements()}}
-\item \href{#method-DoubleMLCIFJ-fit_separable_direct_astar1}{\code{DoubleMLCIFJ$fit_separable_direct_astar1()}}
-\item \href{#method-DoubleMLCIFJ-fit_separable_indirect_astar1}{\code{DoubleMLCIFJ$fit_separable_indirect_astar1()}}
-\item \href{#method-DoubleMLCIFJ-fit_separable_direct_astar0}{\code{DoubleMLCIFJ$fit_separable_direct_astar0()}}
-\item \href{#method-DoubleMLCIFJ-fit_separable_indirect_astar0}{\code{DoubleMLCIFJ$fit_separable_indirect_astar0()}}
+\item \href{#method-DoubleMLCIFJ-get_separable_direct_astar1}{\code{DoubleMLCIFJ$get_separable_direct_astar1()}}
+\item \href{#method-DoubleMLCIFJ-get_separable_indirect_astar1}{\code{DoubleMLCIFJ$get_separable_indirect_astar1()}}
+\item \href{#method-DoubleMLCIFJ-get_separable_direct_astar0}{\code{DoubleMLCIFJ$get_separable_direct_astar0()}}
+\item \href{#method-DoubleMLCIFJ-get_separable_indirect_astar0}{\code{DoubleMLCIFJ$get_separable_indirect_astar0()}}
+\item \href{#method-DoubleMLCIFJ-get_inference_curve}{\code{DoubleMLCIFJ$get_inference_curve()}}
+\item \href{#method-DoubleMLCIFJ-get_inference_curve_sep_direct_astar1}{\code{DoubleMLCIFJ$get_inference_curve_sep_direct_astar1()}}
+\item \href{#method-DoubleMLCIFJ-get_inference_curve_sep_indirect_astar1}{\code{DoubleMLCIFJ$get_inference_curve_sep_indirect_astar1()}}
+\item \href{#method-DoubleMLCIFJ-get_inference_curve_sep_direct_astar0}{\code{DoubleMLCIFJ$get_inference_curve_sep_direct_astar0()}}
+\item \href{#method-DoubleMLCIFJ-get_inference_curve_sep_indirect_astar0}{\code{DoubleMLCIFJ$get_inference_curve_sep_indirect_astar0()}}
 \item \href{#method-DoubleMLCIFJ-clone}{\code{DoubleMLCIFJ$clone()}}
 }
 }
@@ -96,7 +110,6 @@ print(dml_cifj$se)
 <ul>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="bootstrap"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-bootstrap'><code>DoubleML::DoubleML$bootstrap()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="confint"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-confint'><code>DoubleML::DoubleML$confint()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="fit"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-fit'><code>DoubleML::DoubleML$fit()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="get_params"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-get_params'><code>DoubleML::DoubleML$get_params()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="learner_names"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-learner_names'><code>DoubleML::DoubleML$learner_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="p_adjust"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-p_adjust'><code>DoubleML::DoubleML$p_adjust()</code></a></span></li>
@@ -107,6 +120,7 @@ print(dml_cifj$se)
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="split_samples"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-split_samples'><code>DoubleML::DoubleML$split_samples()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="summary"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-summary'><code>DoubleML::DoubleML$summary()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="tune"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-tune'><code>DoubleML::DoubleML$tune()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleMLCompeting" data-id="fit"><a href='../../DoubleML/html/DoubleMLCompeting.html#method-DoubleMLCompeting-fit'><code>DoubleML::DoubleMLCompeting$fit()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleMLCompeting" data-id="get_time_grid"><a href='../../DoubleML/html/DoubleMLCompeting.html#method-DoubleMLCompeting-get_time_grid'><code>DoubleML::DoubleMLCompeting$get_time_grid()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleMLCompeting" data-id="validate_data"><a href='../../DoubleML/html/DoubleMLCompeting.html#method-DoubleMLCompeting-validate_data'><code>DoubleML::DoubleMLCompeting$validate_data()</code></a></span></li>
 </ul>
@@ -205,105 +219,154 @@ Whether to apply cross-fitting. Default is TRUE.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DoubleMLCIFJ-score_elements"></a>}}
-\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-score_elements}{}}}
-\subsection{Method \code{score_elements()}}{
-Compute score elements for DML estimation.
+\if{html}{\out{<a id="method-DoubleMLCIFJ-get_separable_direct_astar1"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-get_separable_direct_astar1}{}}}
+\subsection{Method \code{get_separable_direct_astar1()}}{
+Compute and store separable direct effect with reference treatment A*=1.
+Results accessible via \code{$sep_direct_astar1_estimates}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$score_elements(...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$get_separable_direct_astar1()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DoubleMLCIFJ-get_separable_indirect_astar1"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-get_separable_indirect_astar1}{}}}
+\subsection{Method \code{get_separable_indirect_astar1()}}{
+Compute and store separable indirect effect with reference treatment A*=1.
+Results accessible via \code{$sep_indirect_astar1_estimates}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$get_separable_indirect_astar1()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DoubleMLCIFJ-get_separable_direct_astar0"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-get_separable_direct_astar0}{}}}
+\subsection{Method \code{get_separable_direct_astar0()}}{
+Compute and store separable direct effect with reference treatment A*=0.
+Results accessible via \code{$sep_direct_astar0_estimates}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$get_separable_direct_astar0()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DoubleMLCIFJ-get_separable_indirect_astar0"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-get_separable_indirect_astar0}{}}}
+\subsection{Method \code{get_separable_indirect_astar0()}}{
+Compute and store separable indirect effect with reference treatment A*=0.
+Results accessible via \code{$sep_indirect_astar0_estimates}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$get_separable_indirect_astar0()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DoubleMLCIFJ-get_inference_curve"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-get_inference_curve}{}}}
+\subsection{Method \code{get_inference_curve()}}{
+Get full-curve inference for the cumulative incidence function difference.
+Returns pointwise and simultaneous confidence bands across all time points.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$get_inference_curve(npath = 100)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Additional parameters (not used).}
+\item{\code{npath}}{(\code{integer(1)}) \cr
+Number of bootstrap paths for simultaneous confidence bands. Default is 100.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-List with psi_a and psi_b for DML framework.
+Data frame with point estimates, standard errors, confidence intervals,
+and simultaneous confidence bands at each time point.
+Compute inference curve with simultaneous confidence bands for separable direct effect (A*=1).
+Requires \code{get_separable_direct_astar1()} to be called first.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DoubleMLCIFJ-fit_separable_direct_astar1"></a>}}
-\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-fit_separable_direct_astar1}{}}}
-\subsection{Method \code{fit_separable_direct_astar1()}}{
-Compute separable direct effect with reference treatment A*=1.
+\if{html}{\out{<a id="method-DoubleMLCIFJ-get_inference_curve_sep_direct_astar1"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-get_inference_curve_sep_direct_astar1}{}}}
+\subsection{Method \code{get_inference_curve_sep_direct_astar1()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$fit_separable_direct_astar1()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$get_inference_curve_sep_direct_astar1(npath = 100)}\if{html}{\out{</div>}}
 }
 
-\subsection{Details}{
-Estimates the direct effect of treatment on CIF, holding the mediator at
-the distribution it would have under treatment A*=1. Requires the model
-to have been fitted first via fit().
-}
-
-\subsection{Returns}{
-List with elements:
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
 \describe{
-\item{tau}{Evaluation time point(s)}
-\item{estimate.a0}{CIF estimate under A=0, mediator at A*=1}
-\item{estimate.a1}{CIF estimate under A=1, mediator at A*=1}
-\item{estimate.diff}{Direct effect (A=1 - A=0)}
-\item{se.a0}{Standard error for A=0 estimate}
-\item{se.a1}{Standard error for A=1 estimate}
-\item{se.diff}{Standard error for direct effect}
+\item{\code{npath}}{Number of bootstrap paths for confidence bands.}
 }
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Data frame with point estimates, confidence intervals, and confidence bands.
+Compute inference curve with simultaneous confidence bands for separable indirect effect (A*=1).
+Requires \code{get_separable_indirect_astar1()} to be called first.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DoubleMLCIFJ-fit_separable_indirect_astar1"></a>}}
-\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-fit_separable_indirect_astar1}{}}}
-\subsection{Method \code{fit_separable_indirect_astar1()}}{
-Compute separable indirect effect with reference treatment A*=1.
+\if{html}{\out{<a id="method-DoubleMLCIFJ-get_inference_curve_sep_indirect_astar1"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-get_inference_curve_sep_indirect_astar1}{}}}
+\subsection{Method \code{get_inference_curve_sep_indirect_astar1()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$fit_separable_indirect_astar1()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$get_inference_curve_sep_indirect_astar1(npath = 100)}\if{html}{\out{</div>}}
 }
 
-\subsection{Details}{
-Estimates the indirect effect of treatment on CIF through mediators,
-with treatment held at A*=1. Requires the model to have been fitted first.
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{npath}}{Number of bootstrap paths for confidence bands.}
 }
-
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
-List with same structure as fit_separable_direct_astar1()
+Data frame with point estimates, confidence intervals, and confidence bands.
+Compute inference curve with simultaneous confidence bands for separable direct effect (A*=0).
+Requires \code{get_separable_direct_astar0()} to be called first.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DoubleMLCIFJ-fit_separable_direct_astar0"></a>}}
-\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-fit_separable_direct_astar0}{}}}
-\subsection{Method \code{fit_separable_direct_astar0()}}{
-Compute separable direct effect with reference treatment A*=0.
+\if{html}{\out{<a id="method-DoubleMLCIFJ-get_inference_curve_sep_direct_astar0"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-get_inference_curve_sep_direct_astar0}{}}}
+\subsection{Method \code{get_inference_curve_sep_direct_astar0()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$fit_separable_direct_astar0()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$get_inference_curve_sep_direct_astar0(npath = 100)}\if{html}{\out{</div>}}
 }
 
-\subsection{Details}{
-Estimates the direct effect of treatment on CIF, holding the mediator at
-the distribution it would have under treatment A*=0.
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{npath}}{Number of bootstrap paths for confidence bands.}
 }
-
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
-List with same structure as fit_separable_direct_astar1()
+Data frame with point estimates, confidence intervals, and confidence bands.
+Compute inference curve with simultaneous confidence bands for separable indirect effect (A*=0).
+Requires \code{get_separable_indirect_astar0()} to be called first.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DoubleMLCIFJ-fit_separable_indirect_astar0"></a>}}
-\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-fit_separable_indirect_astar0}{}}}
-\subsection{Method \code{fit_separable_indirect_astar0()}}{
-Compute separable indirect effect with reference treatment A*=0.
+\if{html}{\out{<a id="method-DoubleMLCIFJ-get_inference_curve_sep_indirect_astar0"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCIFJ-get_inference_curve_sep_indirect_astar0}{}}}
+\subsection{Method \code{get_inference_curve_sep_indirect_astar0()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$fit_separable_indirect_astar0()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCIFJ$get_inference_curve_sep_indirect_astar0(npath = 100)}\if{html}{\out{</div>}}
 }
 
-\subsection{Details}{
-Estimates the indirect effect of treatment on CIF through mediators,
-with treatment held at A*=0.
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{npath}}{Number of bootstrap paths for confidence bands.}
 }
-
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
-List with same structure as fit_separable_direct_astar1()
+Data frame with point estimates, confidence intervals, and confidence bands.
 }
 }
 \if{html}{\out{<hr>}}

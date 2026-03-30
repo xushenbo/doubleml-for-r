@@ -57,55 +57,59 @@
 #' }
 #'
 #' @keywords internal
-double_ml_cifj <- function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sj.a1, freq.time=NULL, admin.cens)
+#' @noRd
+double_ml_cifj = function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sj.a1, freq.time = NULL, admin.cens)
 {
-  n <- length(id)
-  cause <- 1
-  if(is.null(freq.time)) {s <- sort(unique(time))} else{
-    s <- seq(freq.time, admin.cens, freq.time)}
-  ns <- length(s)
-  ds <- diff(c(0, s))
+  n = length(id)
+  cause = 1
+  if (is.null(freq.time)) {
+    s = sort(unique(time))
+  } else {
+    s = seq(freq.time, admin.cens, freq.time)
+  }
+  ns = length(s)
+  ds = diff(c(0, s))
 
   # Winsorization of survival functions
-  S.a0 <- t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
-  S.a1 <- t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
-  G.a0 <- t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
-  G.a1 <- t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
-  Sj.a0 <- t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
-  Sj.a1 <- t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
+  S.a0 = t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
+  S.a1 = t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
+  G.a0 = t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
+  G.a1 = t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
+  Sj.a0 = t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
+  Sj.a1 = t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
 
   # Compute hazards
-  G.dHazard.a0 <- t(apply(cbind(0, -log(G.a0)), 1, diff))
-  G.dHazard.a1 <- t(apply(cbind(0, -log(G.a1)), 1, diff))
-  S.dHazard.a0 <- t(apply(cbind(0, -log(S.a0)), 1, diff))
-  S.dHazard.a1 <- t(apply(cbind(0, -log(S.a1)), 1, diff))
-  Fj.dHazard.a0 <- t(apply(cbind(0, -log(Sj.a0)), 1, diff))
-  Fj.dHazard.a1 <- t(apply(cbind(0, -log(Sj.a1)), 1, diff))
+  G.dHazard.a0 = t(apply(cbind(0, -log(G.a0)), 1, diff))
+  G.dHazard.a1 = t(apply(cbind(0, -log(G.a1)), 1, diff))
+  S.dHazard.a0 = t(apply(cbind(0, -log(S.a0)), 1, diff))
+  S.dHazard.a1 = t(apply(cbind(0, -log(S.a1)), 1, diff))
+  Fj.dHazard.a0 = t(apply(cbind(0, -log(Sj.a0)), 1, diff))
+  Fj.dHazard.a1 = t(apply(cbind(0, -log(Sj.a1)), 1, diff))
 
   # Cumulative incidence function
-  Fj.a0 <- t(apply(cbind(1, S.a0[, 1:(ns-1)])*Fj.dHazard.a0, 1, cumsum))
-  Fj.a1 <- t(apply(cbind(1, S.a1[, 1:(ns-1)])*Fj.dHazard.a1, 1, cumsum))
+  Fj.a0 = t(apply(cbind(1, S.a0[, 1:(ns - 1)]) * Fj.dHazard.a0, 1, cumsum))
+  Fj.a1 = t(apply(cbind(1, S.a1[, 1:(ns - 1)]) * Fj.dHazard.a1, 1, cumsum))
 
   # Indicators
-  Yt <- do.call(cbind, lapply(1:ns, function(u)  ifelse(time >= s[u], 1, 0)))
-  dNct <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event == 0)))
-  Njt <- do.call(cbind, lapply(1:ns, function(u)  (time <= s[u])*(event == cause)))
+  Yt = do.call(cbind, lapply(1:ns, function(u) ifelse(time >= s[u], 1, 0)))
+  dNct = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event == 0)))
+  Njt = do.call(cbind, lapply(1:ns, function(u) (time <= s[u]) * (event == cause)))
 
   # 4-term UEIF for A=0
-  term1.a0 <- matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*Njt/matrix(rowSums(G.a0*do.call(cbind, lapply(1:ns, function(u) ifelse(time == s[u], 1, 0)))),ncol=ns,nrow=n,byrow=FALSE)
-  term2.a0 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a0
-  term3.a0 <- matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*Fj.a0*(t(apply((dNct - Yt*G.dHazard.a0)/(S.a0*G.a0), 1, cumsum))-1)
-  term4.a0 <- matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*t(apply((dNct - Yt*G.dHazard.a0)*Fj.a0/(S.a0*G.a0), 1, cumsum))
-  ueif.a0 <- 1/mean(tilt)*(term1.a0+term2.a0+term3.a0-term4.a0)
+  term1.a0 = matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * Njt / matrix(rowSums(G.a0 * do.call(cbind, lapply(1:ns, function(u) ifelse(time == s[u], 1, 0)))), ncol = ns, nrow = n, byrow = FALSE)
+  term2.a0 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a0
+  term3.a0 = matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * Fj.a0 * (t(apply((dNct - Yt * G.dHazard.a0) / (S.a0 * G.a0), 1, cumsum)) - 1)
+  term4.a0 = matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * t(apply((dNct - Yt * G.dHazard.a0) * Fj.a0 / (S.a0 * G.a0), 1, cumsum))
+  ueif.a0 = 1 / mean(tilt) * (term1.a0 + term2.a0 + term3.a0 - term4.a0)
 
   # 4-term UEIF for A=1
-  term1.a1 <- matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*Njt/matrix(rowSums(G.a1*do.call(cbind, lapply(1:ns, function(u) ifelse(time == s[u], 1, 0)))),ncol=ns,nrow=n,byrow=FALSE)
-  term2.a1 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a1
-  term3.a1 <- matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*Fj.a1*(t(apply((dNct - Yt*G.dHazard.a1)/(S.a1*G.a1), 1, cumsum))-1)
-  term4.a1 <- matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*t(apply((dNct - Yt*G.dHazard.a1)*Fj.a1/(S.a1*G.a1), 1, cumsum))
-  ueif.a1 <- 1/mean(tilt)*(term1.a1+term2.a1+term3.a1-term4.a1)
+  term1.a1 = matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * Njt / matrix(rowSums(G.a1 * do.call(cbind, lapply(1:ns, function(u) ifelse(time == s[u], 1, 0)))), ncol = ns, nrow = n, byrow = FALSE)
+  term2.a1 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a1
+  term3.a1 = matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * Fj.a1 * (t(apply((dNct - Yt * G.dHazard.a1) / (S.a1 * G.a1), 1, cumsum)) - 1)
+  term4.a1 = matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * t(apply((dNct - Yt * G.dHazard.a1) * Fj.a1 / (S.a1 * G.a1), 1, cumsum))
+  ueif.a1 = 1 / mean(tilt) * (term1.a1 + term2.a1 + term3.a1 - term4.a1)
 
-  return(list(ueif.a1=ueif.a1, ueif.a0=ueif.a0))
+  return(list(ueif.a1 = ueif.a1, ueif.a0 = ueif.a0))
 }
 
 #' @title Separable Direct Effect for CIFJ with A*=1
@@ -125,61 +129,65 @@ double_ml_cifj <- function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1,
 #' causes fixed at the A=1 treatment level.
 #'
 #' @keywords internal
-double_ml_cifj_sep_direct_astar1 <- function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sjbar.a0, Sj.a1, Sjbar.a1, freq.time=NULL, admin.cens)
+#' @noRd
+double_ml_cifj_sep_direct_astar1 = function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sjbar.a0, Sj.a1, Sjbar.a1, freq.time = NULL, admin.cens)
 {
-  n <- length(id)
-  cause <- 1
-  if(is.null(freq.time)) {s <- sort(unique(time))} else{
-    s <- seq(freq.time, admin.cens, freq.time)}
-  ns <- length(s)
-  ds <- diff(c(0, s))
+  n = length(id)
+  cause = 1
+  if (is.null(freq.time)) {
+    s = sort(unique(time))
+  } else {
+    s = seq(freq.time, admin.cens, freq.time)
+  }
+  ns = length(s)
+  ds = diff(c(0, s))
 
-  S.a0 <- t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
-  S.a1 <- t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
-  G.a0 <- t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
-  G.a1 <- t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
-  Sj.a0 <- t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
-  Sj.a1 <- t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
-  Sjbar.a0 <- t(na.locf(t(ifelse(Sjbar.a0 < 1e-3, 1e-3, Sjbar.a0))))
-  Sjbar.a1 <- t(na.locf(t(ifelse(Sjbar.a1 < 1e-3, 1e-3, Sjbar.a1))))
-  G.dHazard.a0 <- t(apply(cbind(0, -log(G.a0)), 1, diff))
-  G.dHazard.a1 <- t(apply(cbind(0, -log(G.a1)), 1, diff))
-  S.dHazard.a0 <- t(apply(cbind(0, -log(S.a0)), 1, diff))
-  S.dHazard.a1 <- t(apply(cbind(0, -log(S.a1)), 1, diff))
-  Fj.dHazard.a0 <- t(apply(cbind(0, -log(Sj.a0)), 1, diff))
-  Fj.dHazard.a1 <- t(apply(cbind(0, -log(Sj.a1)), 1, diff))
-  Fjbar.dHazard.a0 <- t(apply(cbind(0, -log(Sjbar.a0)), 1, diff))
-  Fjbar.dHazard.a1 <- t(apply(cbind(0, -log(Sjbar.a1)), 1, diff))
+  S.a0 = t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
+  S.a1 = t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
+  G.a0 = t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
+  G.a1 = t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
+  Sj.a0 = t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
+  Sj.a1 = t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
+  Sjbar.a0 = t(na.locf(t(ifelse(Sjbar.a0 < 1e-3, 1e-3, Sjbar.a0))))
+  Sjbar.a1 = t(na.locf(t(ifelse(Sjbar.a1 < 1e-3, 1e-3, Sjbar.a1))))
+  G.dHazard.a0 = t(apply(cbind(0, -log(G.a0)), 1, diff))
+  G.dHazard.a1 = t(apply(cbind(0, -log(G.a1)), 1, diff))
+  S.dHazard.a0 = t(apply(cbind(0, -log(S.a0)), 1, diff))
+  S.dHazard.a1 = t(apply(cbind(0, -log(S.a1)), 1, diff))
+  Fj.dHazard.a0 = t(apply(cbind(0, -log(Sj.a0)), 1, diff))
+  Fj.dHazard.a1 = t(apply(cbind(0, -log(Sj.a1)), 1, diff))
+  Fjbar.dHazard.a0 = t(apply(cbind(0, -log(Sjbar.a0)), 1, diff))
+  Fjbar.dHazard.a1 = t(apply(cbind(0, -log(Sjbar.a1)), 1, diff))
 
-  Fj.a0 <- t(apply(cbind(1, S.a0[, 1:(ns-1)])*Fj.dHazard.a0, 1, cumsum))
-  Fj.a1 <- t(apply(cbind(1, S.a1[, 1:(ns-1)])*Fj.dHazard.a1, 1, cumsum))
-  Fj.a0.a1 <- t(apply(cbind(1, winsorize_values(Sj.a0*Sjbar.a1, lower = 1e-3, upper = 1)[, 1:(ns-1)])*Fj.dHazard.a0, 1, cumsum)) # not Fj.dHazard.a1!
+  Fj.a0 = t(apply(cbind(1, S.a0[, 1:(ns - 1)]) * Fj.dHazard.a0, 1, cumsum))
+  Fj.a1 = t(apply(cbind(1, S.a1[, 1:(ns - 1)]) * Fj.dHazard.a1, 1, cumsum))
+  Fj.a0.a1 = t(apply(cbind(1, winsorize_values(Sj.a0 * Sjbar.a1, lower = 1e-3, upper = 1)[, 1:(ns - 1)]) * Fj.dHazard.a0, 1, cumsum)) # not Fj.dHazard.a1!
 
-  Yt <- do.call(cbind, lapply(1:ns, function(u)  ifelse(time >= s[u], 1, 0)))
-  dNct <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event == 0)))
-  dNt <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event != 0)))
-  dNjt <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event == 1)))
-  dNjbart <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event > 1)))
+  Yt = do.call(cbind, lapply(1:ns, function(u) ifelse(time >= s[u], 1, 0)))
+  dNct = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event == 0)))
+  dNt = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event != 0)))
+  dNjt = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event == 1)))
+  dNjbart = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event > 1)))
 
   # a=0
-  term1.a0 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a0.a1
-  term2.a0 <- matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*t(apply(Sjbar.a1*(dNjt-Yt*Fj.dHazard.a0)/(Sjbar.a0*G.a0), 1, cumsum))
-  term3.a0 <- -matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a0*t(apply(Sjbar.a1*(dNt-Yt*S.dHazard.a0)/(Sjbar.a0*S.a0*G.a0), 1, cumsum))
-                                                             -t(apply(Fj.a0*Sjbar.a1*(dNt-Yt*S.dHazard.a0)/(Sjbar.a0*S.a0*G.a0), 1, cumsum)))
-  term4.a0 <- matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a0.a1*t(apply((dNjbart-Yt*Fjbar.dHazard.a0)/(S.a0*G.a0), 1, cumsum))
-                                                            -t(apply(Fj.a0.a1*(dNjbart-Yt*Fjbar.dHazard.a0)/(S.a0*G.a0), 1, cumsum)))
-  term5.a0 <- -matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a0.a1*t(apply((dNjbart-Yt*Fjbar.dHazard.a1)/(S.a1*G.a1), 1, cumsum))
-                                                             -t(apply(Fj.a0.a1*(dNjbart-Yt*Fjbar.dHazard.a1)/(S.a1*G.a1), 1, cumsum)))
-  ueif.a0 <- 1/mean(bw*(a==0))*(term2.a0+term3.a0+term4.a0)+1/mean(bw*(a==1))*term5.a0+1/mean(tilt)*term1.a0
+  term1.a0 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a0.a1
+  term2.a0 = matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * t(apply(Sjbar.a1 * (dNjt - Yt * Fj.dHazard.a0) / (Sjbar.a0 * G.a0), 1, cumsum))
+  term3.a0 = -matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a0 * t(apply(Sjbar.a1 * (dNt - Yt * S.dHazard.a0) / (Sjbar.a0 * S.a0 * G.a0), 1, cumsum))
+    - t(apply(Fj.a0 * Sjbar.a1 * (dNt - Yt * S.dHazard.a0) / (Sjbar.a0 * S.a0 * G.a0), 1, cumsum)))
+  term4.a0 = matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a0.a1 * t(apply((dNjbart - Yt * Fjbar.dHazard.a0) / (S.a0 * G.a0), 1, cumsum))
+    - t(apply(Fj.a0.a1 * (dNjbart - Yt * Fjbar.dHazard.a0) / (S.a0 * G.a0), 1, cumsum)))
+  term5.a0 = -matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a0.a1 * t(apply((dNjbart - Yt * Fjbar.dHazard.a1) / (S.a1 * G.a1), 1, cumsum))
+    - t(apply(Fj.a0.a1 * (dNjbart - Yt * Fjbar.dHazard.a1) / (S.a1 * G.a1), 1, cumsum)))
+  ueif.a0 = 1 / mean(bw * (a == 0)) * (term2.a0 + term3.a0 + term4.a0) + 1 / mean(bw * (a == 1)) * term5.a0 + 1 / mean(tilt) * term1.a0
 
   # a=1
-  term1.a1 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a1
-  term2.a1 <- matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*t(apply((dNjt-Yt*Fj.dHazard.a1)/(G.a1), 1, cumsum))
-  term3.a1 <- -matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a1*t(apply((dNt-Yt*S.dHazard.a1)/(S.a1*G.a1), 1, cumsum))
-                                                             -t(apply(Fj.a1*(dNt-Yt*S.dHazard.a1)/(S.a1*G.a1), 1, cumsum)))
-  ueif.a1 <- 1/mean(bw*(a==1))*(term2.a1+term3.a1)+1/mean(tilt)*term1.a1
+  term1.a1 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a1
+  term2.a1 = matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * t(apply((dNjt - Yt * Fj.dHazard.a1) / (G.a1), 1, cumsum))
+  term3.a1 = -matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a1 * t(apply((dNt - Yt * S.dHazard.a1) / (S.a1 * G.a1), 1, cumsum))
+    - t(apply(Fj.a1 * (dNt - Yt * S.dHazard.a1) / (S.a1 * G.a1), 1, cumsum)))
+  ueif.a1 = 1 / mean(bw * (a == 1)) * (term2.a1 + term3.a1) + 1 / mean(tilt) * term1.a1
 
-  return(list(ueif.a1=ueif.a1, ueif.a0=ueif.a0))
+  return(list(ueif.a1 = ueif.a1, ueif.a0 = ueif.a0))
 }
 
 #' @title Separable Indirect Effect for CIFJ with A*=1
@@ -197,61 +205,65 @@ double_ml_cifj_sep_direct_astar1 <- function(id, a, time, event, bw, tilt, G.a0,
 #' causes, with the direct cause held at the A=0 level.
 #'
 #' @keywords internal
-double_ml_cifj_sep_indirect_astar1 <- function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sjbar.a0, Sj.a1, Sjbar.a1, freq.time=NULL, admin.cens)
+#' @noRd
+double_ml_cifj_sep_indirect_astar1 = function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sjbar.a0, Sj.a1, Sjbar.a1, freq.time = NULL, admin.cens)
 {
-  n <- length(id)
-  cause <- 1
-  if(is.null(freq.time)) {s <- sort(unique(time))} else{
-    s <- seq(freq.time, admin.cens, freq.time)}
-  ns <- length(s)
-  ds <- diff(c(0, s))
+  n = length(id)
+  cause = 1
+  if (is.null(freq.time)) {
+    s = sort(unique(time))
+  } else {
+    s = seq(freq.time, admin.cens, freq.time)
+  }
+  ns = length(s)
+  ds = diff(c(0, s))
 
-  S.a0 <- t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
-  S.a1 <- t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
-  G.a0 <- t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
-  G.a1 <- t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
-  Sj.a0 <- t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
-  Sj.a1 <- t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
-  Sjbar.a0 <- t(na.locf(t(ifelse(Sjbar.a0 < 1e-3, 1e-3, Sjbar.a0))))
-  Sjbar.a1 <- t(na.locf(t(ifelse(Sjbar.a1 < 1e-3, 1e-3, Sjbar.a1))))
-  G.dHazard.a0 <- t(apply(cbind(0, -log(G.a0)), 1, diff))
-  G.dHazard.a1 <- t(apply(cbind(0, -log(G.a1)), 1, diff))
-  S.dHazard.a0 <- t(apply(cbind(0, -log(S.a0)), 1, diff))
-  S.dHazard.a1 <- t(apply(cbind(0, -log(S.a1)), 1, diff))
-  Fj.dHazard.a0 <- t(apply(cbind(0, -log(Sj.a0)), 1, diff))
-  Fj.dHazard.a1 <- t(apply(cbind(0, -log(Sj.a1)), 1, diff))
-  Fjbar.dHazard.a0 <- t(apply(cbind(0, -log(Sjbar.a0)), 1, diff))
-  Fjbar.dHazard.a1 <- t(apply(cbind(0, -log(Sjbar.a1)), 1, diff))
+  S.a0 = t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
+  S.a1 = t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
+  G.a0 = t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
+  G.a1 = t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
+  Sj.a0 = t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
+  Sj.a1 = t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
+  Sjbar.a0 = t(na.locf(t(ifelse(Sjbar.a0 < 1e-3, 1e-3, Sjbar.a0))))
+  Sjbar.a1 = t(na.locf(t(ifelse(Sjbar.a1 < 1e-3, 1e-3, Sjbar.a1))))
+  G.dHazard.a0 = t(apply(cbind(0, -log(G.a0)), 1, diff))
+  G.dHazard.a1 = t(apply(cbind(0, -log(G.a1)), 1, diff))
+  S.dHazard.a0 = t(apply(cbind(0, -log(S.a0)), 1, diff))
+  S.dHazard.a1 = t(apply(cbind(0, -log(S.a1)), 1, diff))
+  Fj.dHazard.a0 = t(apply(cbind(0, -log(Sj.a0)), 1, diff))
+  Fj.dHazard.a1 = t(apply(cbind(0, -log(Sj.a1)), 1, diff))
+  Fjbar.dHazard.a0 = t(apply(cbind(0, -log(Sjbar.a0)), 1, diff))
+  Fjbar.dHazard.a1 = t(apply(cbind(0, -log(Sjbar.a1)), 1, diff))
 
-  Fj.a0 <- t(apply(cbind(1, S.a0[, 1:(ns-1)])*Fj.dHazard.a0, 1, cumsum))
-  Fj.a1 <- t(apply(cbind(1, S.a1[, 1:(ns-1)])*Fj.dHazard.a1, 1, cumsum))
-  Fj.a0.a1 <- t(apply(cbind(1, winsorize_values(Sj.a0*Sjbar.a1, lower = 1e-3, upper = 1)[, 1:(ns-1)])*Fj.dHazard.a0, 1, cumsum)) # not Fj.dHazard.a1!
+  Fj.a0 = t(apply(cbind(1, S.a0[, 1:(ns - 1)]) * Fj.dHazard.a0, 1, cumsum))
+  Fj.a1 = t(apply(cbind(1, S.a1[, 1:(ns - 1)]) * Fj.dHazard.a1, 1, cumsum))
+  Fj.a0.a1 = t(apply(cbind(1, winsorize_values(Sj.a0 * Sjbar.a1, lower = 1e-3, upper = 1)[, 1:(ns - 1)]) * Fj.dHazard.a0, 1, cumsum)) # not Fj.dHazard.a1!
 
-  Yt <- do.call(cbind, lapply(1:ns, function(u)  ifelse(time >= s[u], 1, 0)))
-  dNct <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event == 0)))
-  dNt <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event != 0)))
-  dNjt <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event == 1)))
-  dNjbart <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event > 1)))
+  Yt = do.call(cbind, lapply(1:ns, function(u) ifelse(time >= s[u], 1, 0)))
+  dNct = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event == 0)))
+  dNt = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event != 0)))
+  dNjt = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event == 1)))
+  dNjbart = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event > 1)))
 
   # a=0
-  term1.a0 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a0
-  term2.a0 <- matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*t(apply((dNjt-Yt*Fj.dHazard.a0)/(G.a0), 1, cumsum))
-  term3.a0 <- -matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a0*t(apply((dNt-Yt*S.dHazard.a0)/(S.a0*G.a0), 1, cumsum))
-                                                             -t(apply(Fj.a0*(dNt-Yt*S.dHazard.a0)/(S.a0*G.a0), 1, cumsum)))
-  ueif.a0 <- 1/mean(bw*(a==0))*(term2.a0+term3.a0)+1/mean(tilt)*term1.a0
+  term1.a0 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a0
+  term2.a0 = matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * t(apply((dNjt - Yt * Fj.dHazard.a0) / (G.a0), 1, cumsum))
+  term3.a0 = -matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a0 * t(apply((dNt - Yt * S.dHazard.a0) / (S.a0 * G.a0), 1, cumsum))
+    - t(apply(Fj.a0 * (dNt - Yt * S.dHazard.a0) / (S.a0 * G.a0), 1, cumsum)))
+  ueif.a0 = 1 / mean(bw * (a == 0)) * (term2.a0 + term3.a0) + 1 / mean(tilt) * term1.a0
 
   # a=1
-  term1.a1 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a0.a1
-  term2.a1 <- matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a0.a1*t(apply((dNjbart-Yt*Fjbar.dHazard.a0)/(S.a0*G.a0), 1, cumsum))
-                                                            -t(apply(Fj.a0.a1*(dNjbart-Yt*Fjbar.dHazard.a0)/(S.a0*G.a0), 1, cumsum)))
-  term3.a1 <- -matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a0.a1*t(apply((dNjbart-Yt*Fjbar.dHazard.a1)/(S.a1*G.a1), 1, cumsum))
-                                                             -t(apply(Fj.a0.a1*(dNjbart-Yt*Fjbar.dHazard.a1)/(S.a1*G.a1), 1, cumsum)))
-  term4.a1 <- matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*t(apply((dNjt-Yt*Fj.dHazard.a0)/(G.a0)*(Sjbar.a1/Sjbar.a0), 1, cumsum))
-  term5.a1 <- -matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a0*t(apply((dNt-Yt*S.dHazard.a0)/(S.a0*G.a0)*(Sjbar.a1/Sjbar.a0), 1, cumsum))
-                                                             -t(apply(Fj.a0*(dNt-Yt*S.dHazard.a0)/(S.a0*G.a0)*(Sjbar.a1/Sjbar.a0), 1, cumsum)))
-  ueif.a1 <- 1/mean(bw*(a==1))*(term3.a1)+1/mean(bw*(a==0))*(term2.a1+term4.a1+term5.a1)+1/mean(tilt)*term1.a1
+  term1.a1 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a0.a1
+  term2.a1 = matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a0.a1 * t(apply((dNjbart - Yt * Fjbar.dHazard.a0) / (S.a0 * G.a0), 1, cumsum))
+    - t(apply(Fj.a0.a1 * (dNjbart - Yt * Fjbar.dHazard.a0) / (S.a0 * G.a0), 1, cumsum)))
+  term3.a1 = -matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a0.a1 * t(apply((dNjbart - Yt * Fjbar.dHazard.a1) / (S.a1 * G.a1), 1, cumsum))
+    - t(apply(Fj.a0.a1 * (dNjbart - Yt * Fjbar.dHazard.a1) / (S.a1 * G.a1), 1, cumsum)))
+  term4.a1 = matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * t(apply((dNjt - Yt * Fj.dHazard.a0) / (G.a0) * (Sjbar.a1 / Sjbar.a0), 1, cumsum))
+  term5.a1 = -matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a0 * t(apply((dNt - Yt * S.dHazard.a0) / (S.a0 * G.a0) * (Sjbar.a1 / Sjbar.a0), 1, cumsum))
+    - t(apply(Fj.a0 * (dNt - Yt * S.dHazard.a0) / (S.a0 * G.a0) * (Sjbar.a1 / Sjbar.a0), 1, cumsum)))
+  ueif.a1 = 1 / mean(bw * (a == 1)) * (term3.a1) + 1 / mean(bw * (a == 0)) * (term2.a1 + term4.a1 + term5.a1) + 1 / mean(tilt) * term1.a1
 
-  return(list(ueif.a1=ueif.a1, ueif.a0=ueif.a0))
+  return(list(ueif.a1 = ueif.a1, ueif.a0 = ueif.a0))
 }
 
 #' @title Separable Direct Effect for CIFJ with A*=0
@@ -269,61 +281,65 @@ double_ml_cifj_sep_indirect_astar1 <- function(id, a, time, event, bw, tilt, G.a
 #' causes fixed at the A=0 treatment level.
 #'
 #' @keywords internal
-double_ml_cifj_sep_direct_astar0 <- function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sjbar.a0, Sj.a1, Sjbar.a1, freq.time=NULL, admin.cens)
+#' @noRd
+double_ml_cifj_sep_direct_astar0 = function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sjbar.a0, Sj.a1, Sjbar.a1, freq.time = NULL, admin.cens)
 {
-  n <- length(id)
-  cause <- 1
-  if(is.null(freq.time)) {s <- sort(unique(time))} else{
-    s <- seq(freq.time, admin.cens, freq.time)}
-  ns <- length(s)
-  ds <- diff(c(0, s))
+  n = length(id)
+  cause = 1
+  if (is.null(freq.time)) {
+    s = sort(unique(time))
+  } else {
+    s = seq(freq.time, admin.cens, freq.time)
+  }
+  ns = length(s)
+  ds = diff(c(0, s))
 
-  S.a0 <- t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
-  S.a1 <- t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
-  G.a0 <- t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
-  G.a1 <- t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
-  Sj.a0 <- t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
-  Sj.a1 <- t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
-  Sjbar.a0 <- t(na.locf(t(ifelse(Sjbar.a0 < 1e-3, 1e-3, Sjbar.a0))))
-  Sjbar.a1 <- t(na.locf(t(ifelse(Sjbar.a1 < 1e-3, 1e-3, Sjbar.a1))))
-  G.dHazard.a0 <- t(apply(cbind(0, -log(G.a0)), 1, diff))
-  G.dHazard.a1 <- t(apply(cbind(0, -log(G.a1)), 1, diff))
-  S.dHazard.a0 <- t(apply(cbind(0, -log(S.a0)), 1, diff))
-  S.dHazard.a1 <- t(apply(cbind(0, -log(S.a1)), 1, diff))
-  Fj.dHazard.a0 <- t(apply(cbind(0, -log(Sj.a0)), 1, diff))
-  Fj.dHazard.a1 <- t(apply(cbind(0, -log(Sj.a1)), 1, diff))
-  Fjbar.dHazard.a0 <- t(apply(cbind(0, -log(Sjbar.a0)), 1, diff))
-  Fjbar.dHazard.a1 <- t(apply(cbind(0, -log(Sjbar.a1)), 1, diff))
+  S.a0 = t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
+  S.a1 = t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
+  G.a0 = t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
+  G.a1 = t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
+  Sj.a0 = t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
+  Sj.a1 = t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
+  Sjbar.a0 = t(na.locf(t(ifelse(Sjbar.a0 < 1e-3, 1e-3, Sjbar.a0))))
+  Sjbar.a1 = t(na.locf(t(ifelse(Sjbar.a1 < 1e-3, 1e-3, Sjbar.a1))))
+  G.dHazard.a0 = t(apply(cbind(0, -log(G.a0)), 1, diff))
+  G.dHazard.a1 = t(apply(cbind(0, -log(G.a1)), 1, diff))
+  S.dHazard.a0 = t(apply(cbind(0, -log(S.a0)), 1, diff))
+  S.dHazard.a1 = t(apply(cbind(0, -log(S.a1)), 1, diff))
+  Fj.dHazard.a0 = t(apply(cbind(0, -log(Sj.a0)), 1, diff))
+  Fj.dHazard.a1 = t(apply(cbind(0, -log(Sj.a1)), 1, diff))
+  Fjbar.dHazard.a0 = t(apply(cbind(0, -log(Sjbar.a0)), 1, diff))
+  Fjbar.dHazard.a1 = t(apply(cbind(0, -log(Sjbar.a1)), 1, diff))
 
-  Fj.a0 <- t(apply(cbind(1, S.a0[, 1:(ns-1)])*Fj.dHazard.a0, 1, cumsum))
-  Fj.a1 <- t(apply(cbind(1, S.a1[, 1:(ns-1)])*Fj.dHazard.a1, 1, cumsum))
-  Fj.a1.a0 <- t(apply(cbind(1, winsorize_values(Sj.a1*Sjbar.a0, lower = 1e-3, upper = 1)[, 1:(ns-1)])*Fj.dHazard.a1, 1, cumsum)) # not Fj.dHazard.a1!
+  Fj.a0 = t(apply(cbind(1, S.a0[, 1:(ns - 1)]) * Fj.dHazard.a0, 1, cumsum))
+  Fj.a1 = t(apply(cbind(1, S.a1[, 1:(ns - 1)]) * Fj.dHazard.a1, 1, cumsum))
+  Fj.a1.a0 = t(apply(cbind(1, winsorize_values(Sj.a1 * Sjbar.a0, lower = 1e-3, upper = 1)[, 1:(ns - 1)]) * Fj.dHazard.a1, 1, cumsum)) # not Fj.dHazard.a1!
 
-  Yt <- do.call(cbind, lapply(1:ns, function(u)  ifelse(time >= s[u], 1, 0)))
-  dNct <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event == 0)))
-  dNt <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event != 0)))
-  dNjt <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event == 1)))
-  dNjbart <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event > 1)))
+  Yt = do.call(cbind, lapply(1:ns, function(u) ifelse(time >= s[u], 1, 0)))
+  dNct = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event == 0)))
+  dNt = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event != 0)))
+  dNjt = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event == 1)))
+  dNjbart = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event > 1)))
 
   # a=0
-  term1.a0 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a0
-  term2.a0 <- matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*t(apply((dNjt-Yt*Fj.dHazard.a0)/(G.a0), 1, cumsum))
-  term3.a0 <- -matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a0*t(apply((dNt-Yt*S.dHazard.a0)/(S.a0*G.a0), 1, cumsum))
-                                                             -t(apply(Fj.a0*(dNt-Yt*S.dHazard.a0)/(S.a0*G.a0), 1, cumsum)))
-  ueif.a0 <- 1/mean(bw*(a==0))*(term2.a0+term3.a0)+1/mean(tilt)*term1.a0
+  term1.a0 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a0
+  term2.a0 = matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * t(apply((dNjt - Yt * Fj.dHazard.a0) / (G.a0), 1, cumsum))
+  term3.a0 = -matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a0 * t(apply((dNt - Yt * S.dHazard.a0) / (S.a0 * G.a0), 1, cumsum))
+    - t(apply(Fj.a0 * (dNt - Yt * S.dHazard.a0) / (S.a0 * G.a0), 1, cumsum)))
+  ueif.a0 = 1 / mean(bw * (a == 0)) * (term2.a0 + term3.a0) + 1 / mean(tilt) * term1.a0
 
   # a=1
-  term1.a1 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a1.a0
-  term2.a1 <- matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*t(apply(Sjbar.a0*(dNjt-Yt*Fj.dHazard.a1)/(Sjbar.a1*G.a1), 1, cumsum))
-  term3.a1 <- -matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a1*t(apply(Sjbar.a0*(dNt-Yt*S.dHazard.a1)/(Sjbar.a1*S.a1*G.a1), 1, cumsum))
-                                                             -t(apply(Fj.a1*Sjbar.a0*(dNt-Yt*S.dHazard.a1)/(Sjbar.a1*S.a1*G.a1), 1, cumsum)))
-  term4.a1 <- matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a1.a0*t(apply((dNjbart-Yt*Fjbar.dHazard.a1)/(S.a1*G.a1), 1, cumsum))
-                                                            -t(apply(Fj.a1.a0*(dNjbart-Yt*Fjbar.dHazard.a1)/(S.a1*G.a1), 1, cumsum)))
-  term5.a1 <- -matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a1.a0*t(apply((dNjbart-Yt*Fjbar.dHazard.a0)/(S.a0*G.a0), 1, cumsum))
-                                                             -t(apply(Fj.a1.a0*(dNjbart-Yt*Fjbar.dHazard.a0)/(S.a0*G.a0), 1, cumsum)))
-  ueif.a1 <- 1/mean(bw*(a==1))*(term2.a1+term3.a1+term4.a1)+1/mean(bw*(a==0))*term5.a1+1/mean(tilt)*term1.a1
+  term1.a1 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a1.a0
+  term2.a1 = matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * t(apply(Sjbar.a0 * (dNjt - Yt * Fj.dHazard.a1) / (Sjbar.a1 * G.a1), 1, cumsum))
+  term3.a1 = -matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a1 * t(apply(Sjbar.a0 * (dNt - Yt * S.dHazard.a1) / (Sjbar.a1 * S.a1 * G.a1), 1, cumsum))
+    - t(apply(Fj.a1 * Sjbar.a0 * (dNt - Yt * S.dHazard.a1) / (Sjbar.a1 * S.a1 * G.a1), 1, cumsum)))
+  term4.a1 = matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a1.a0 * t(apply((dNjbart - Yt * Fjbar.dHazard.a1) / (S.a1 * G.a1), 1, cumsum))
+    - t(apply(Fj.a1.a0 * (dNjbart - Yt * Fjbar.dHazard.a1) / (S.a1 * G.a1), 1, cumsum)))
+  term5.a1 = -matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a1.a0 * t(apply((dNjbart - Yt * Fjbar.dHazard.a0) / (S.a0 * G.a0), 1, cumsum))
+    - t(apply(Fj.a1.a0 * (dNjbart - Yt * Fjbar.dHazard.a0) / (S.a0 * G.a0), 1, cumsum)))
+  ueif.a1 = 1 / mean(bw * (a == 1)) * (term2.a1 + term3.a1 + term4.a1) + 1 / mean(bw * (a == 0)) * term5.a1 + 1 / mean(tilt) * term1.a1
 
-  return(list(ueif.a1=ueif.a1, ueif.a0=ueif.a0))
+  return(list(ueif.a1 = ueif.a1, ueif.a0 = ueif.a0))
 }
 
 #' @title Separable Indirect Effect for CIFJ with A*=0
@@ -341,61 +357,65 @@ double_ml_cifj_sep_direct_astar0 <- function(id, a, time, event, bw, tilt, G.a0,
 #' causes, with the direct cause held at the A=1 level.
 #'
 #' @keywords internal
-double_ml_cifj_sep_indirect_astar0 <- function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sjbar.a0, Sj.a1, Sjbar.a1, freq.time=NULL, admin.cens)
+#' @noRd
+double_ml_cifj_sep_indirect_astar0 = function(id, a, time, event, bw, tilt, G.a0, G.a1, S.a0, S.a1, Sj.a0, Sjbar.a0, Sj.a1, Sjbar.a1, freq.time = NULL, admin.cens)
 {
-  n <- length(id)
-  cause <- 1
-  if(is.null(freq.time)) {s <- sort(unique(time))} else{
-    s <- seq(freq.time, admin.cens, freq.time)}
-  ns <- length(s)
-  ds <- diff(c(0, s))
+  n = length(id)
+  cause = 1
+  if (is.null(freq.time)) {
+    s = sort(unique(time))
+  } else {
+    s = seq(freq.time, admin.cens, freq.time)
+  }
+  ns = length(s)
+  ds = diff(c(0, s))
 
-  S.a0 <- t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
-  S.a1 <- t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
-  G.a0 <- t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
-  G.a1 <- t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
-  Sj.a0 <- t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
-  Sj.a1 <- t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
-  Sjbar.a0 <- t(na.locf(t(ifelse(Sjbar.a0 < 1e-3, 1e-3, Sjbar.a0))))
-  Sjbar.a1 <- t(na.locf(t(ifelse(Sjbar.a1 < 1e-3, 1e-3, Sjbar.a1))))
-  G.dHazard.a0 <- t(apply(cbind(0, -log(G.a0)), 1, diff))
-  G.dHazard.a1 <- t(apply(cbind(0, -log(G.a1)), 1, diff))
-  S.dHazard.a0 <- t(apply(cbind(0, -log(S.a0)), 1, diff))
-  S.dHazard.a1 <- t(apply(cbind(0, -log(S.a1)), 1, diff))
-  Fj.dHazard.a0 <- t(apply(cbind(0, -log(Sj.a0)), 1, diff))
-  Fj.dHazard.a1 <- t(apply(cbind(0, -log(Sj.a1)), 1, diff))
-  Fjbar.dHazard.a0 <- t(apply(cbind(0, -log(Sjbar.a0)), 1, diff))
-  Fjbar.dHazard.a1 <- t(apply(cbind(0, -log(Sjbar.a1)), 1, diff))
+  S.a0 = t(na.locf(t(ifelse(S.a0 < 1e-3, 1e-3, S.a0))))
+  S.a1 = t(na.locf(t(ifelse(S.a1 < 1e-3, 1e-3, S.a1))))
+  G.a0 = t(na.locf(t(ifelse(G.a0 < 1e-3, 1e-3, G.a0))))
+  G.a1 = t(na.locf(t(ifelse(G.a1 < 1e-3, 1e-3, G.a1))))
+  Sj.a0 = t(na.locf(t(ifelse(Sj.a0 < 1e-3, 1e-3, Sj.a0))))
+  Sj.a1 = t(na.locf(t(ifelse(Sj.a1 < 1e-3, 1e-3, Sj.a1))))
+  Sjbar.a0 = t(na.locf(t(ifelse(Sjbar.a0 < 1e-3, 1e-3, Sjbar.a0))))
+  Sjbar.a1 = t(na.locf(t(ifelse(Sjbar.a1 < 1e-3, 1e-3, Sjbar.a1))))
+  G.dHazard.a0 = t(apply(cbind(0, -log(G.a0)), 1, diff))
+  G.dHazard.a1 = t(apply(cbind(0, -log(G.a1)), 1, diff))
+  S.dHazard.a0 = t(apply(cbind(0, -log(S.a0)), 1, diff))
+  S.dHazard.a1 = t(apply(cbind(0, -log(S.a1)), 1, diff))
+  Fj.dHazard.a0 = t(apply(cbind(0, -log(Sj.a0)), 1, diff))
+  Fj.dHazard.a1 = t(apply(cbind(0, -log(Sj.a1)), 1, diff))
+  Fjbar.dHazard.a0 = t(apply(cbind(0, -log(Sjbar.a0)), 1, diff))
+  Fjbar.dHazard.a1 = t(apply(cbind(0, -log(Sjbar.a1)), 1, diff))
 
-  Fj.a0 <- t(apply(cbind(1, S.a0[, 1:(ns-1)])*Fj.dHazard.a0, 1, cumsum))
-  Fj.a1 <- t(apply(cbind(1, S.a1[, 1:(ns-1)])*Fj.dHazard.a1, 1, cumsum))
-  Fj.a1.a0 <- t(apply(cbind(1, winsorize_values(Sj.a1*Sjbar.a0, lower = 1e-3, upper = 1)[, 1:(ns-1)])*Fj.dHazard.a1, 1, cumsum)) # not Fj.dHazard.a1!
+  Fj.a0 = t(apply(cbind(1, S.a0[, 1:(ns - 1)]) * Fj.dHazard.a0, 1, cumsum))
+  Fj.a1 = t(apply(cbind(1, S.a1[, 1:(ns - 1)]) * Fj.dHazard.a1, 1, cumsum))
+  Fj.a1.a0 = t(apply(cbind(1, winsorize_values(Sj.a1 * Sjbar.a0, lower = 1e-3, upper = 1)[, 1:(ns - 1)]) * Fj.dHazard.a1, 1, cumsum)) # not Fj.dHazard.a1!
 
-  Yt <- do.call(cbind, lapply(1:ns, function(u)  ifelse(time >= s[u], 1, 0)))
-  dNct <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event == 0)))
-  dNt <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event != 0)))
-  dNjt <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event == 1)))
-  dNjbart <- do.call(cbind, lapply(1:ns, function(u)  (dplyr::near(s[u], time))*(event > 1)))
+  Yt = do.call(cbind, lapply(1:ns, function(u) ifelse(time >= s[u], 1, 0)))
+  dNct = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event == 0)))
+  dNt = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event != 0)))
+  dNjt = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event == 1)))
+  dNjbart = do.call(cbind, lapply(1:ns, function(u) (dplyr::near(s[u], time)) * (event > 1)))
 
   # a=0
-  term1.a0 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a1.a0
-  term2.a0 <- matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a1.a0*t(apply((dNjbart-Yt*Fjbar.dHazard.a1)/(S.a1*G.a1), 1, cumsum))
-                                                            -t(apply(Fj.a1.a0*(dNjbart-Yt*Fjbar.dHazard.a1)/(S.a1*G.a1), 1, cumsum)))
-  term3.a0 <- -matrix(bw*(a==0),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a1.a0*t(apply((dNjbart-Yt*Fjbar.dHazard.a0)/(S.a0*G.a0), 1, cumsum))
-                                                             -t(apply(Fj.a1.a0*(dNjbart-Yt*Fjbar.dHazard.a0)/(S.a0*G.a0), 1, cumsum)))
-  term4.a0 <- matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*t(apply((dNjt-Yt*Fj.dHazard.a1)/(G.a1)*(Sjbar.a0/Sjbar.a1), 1, cumsum))
-  term5.a0 <- -matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a1*t(apply((dNt-Yt*S.dHazard.a1)/(S.a1*G.a1)*(Sjbar.a0/Sjbar.a1), 1, cumsum))
-                                                             -t(apply(Fj.a1*(dNt-Yt*S.dHazard.a1)/(S.a1*G.a1)*(Sjbar.a0/Sjbar.a1), 1, cumsum)))
-  ueif.a0 <- 1/mean(bw*(a==0))*(term3.a0)+1/mean(bw*(a==1))*(term2.a0+term4.a0+term5.a0)+1/mean(tilt)*term1.a0
+  term1.a0 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a1.a0
+  term2.a0 = matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a1.a0 * t(apply((dNjbart - Yt * Fjbar.dHazard.a1) / (S.a1 * G.a1), 1, cumsum))
+    - t(apply(Fj.a1.a0 * (dNjbart - Yt * Fjbar.dHazard.a1) / (S.a1 * G.a1), 1, cumsum)))
+  term3.a0 = -matrix(bw * (a == 0), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a1.a0 * t(apply((dNjbart - Yt * Fjbar.dHazard.a0) / (S.a0 * G.a0), 1, cumsum))
+    - t(apply(Fj.a1.a0 * (dNjbart - Yt * Fjbar.dHazard.a0) / (S.a0 * G.a0), 1, cumsum)))
+  term4.a0 = matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * t(apply((dNjt - Yt * Fj.dHazard.a1) / (G.a1) * (Sjbar.a0 / Sjbar.a1), 1, cumsum))
+  term5.a0 = -matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a1 * t(apply((dNt - Yt * S.dHazard.a1) / (S.a1 * G.a1) * (Sjbar.a0 / Sjbar.a1), 1, cumsum))
+    - t(apply(Fj.a1 * (dNt - Yt * S.dHazard.a1) / (S.a1 * G.a1) * (Sjbar.a0 / Sjbar.a1), 1, cumsum)))
+  ueif.a0 = 1 / mean(bw * (a == 0)) * (term3.a0) + 1 / mean(bw * (a == 1)) * (term2.a0 + term4.a0 + term5.a0) + 1 / mean(tilt) * term1.a0
 
   # a=1
-  term1.a1 <- matrix(tilt,ncol=ns,nrow=n,byrow=FALSE)*Fj.a1
-  term2.a1 <- matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*t(apply((dNjt-Yt*Fj.dHazard.a1)/(G.a1), 1, cumsum))
-  term3.a1 <- -matrix(bw*(a==1),ncol=ns,nrow=n,byrow=FALSE)*(Fj.a1*t(apply((dNt-Yt*S.dHazard.a1)/(S.a1*G.a1), 1, cumsum))
-                                                             -t(apply(Fj.a1*(dNt-Yt*S.dHazard.a1)/(S.a1*G.a1), 1, cumsum)))
-  ueif.a1 <- 1/mean(bw*(a==1))*(term2.a1+term3.a1)+1/mean(tilt)*term1.a1
+  term1.a1 = matrix(tilt, ncol = ns, nrow = n, byrow = FALSE) * Fj.a1
+  term2.a1 = matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * t(apply((dNjt - Yt * Fj.dHazard.a1) / (G.a1), 1, cumsum))
+  term3.a1 = -matrix(bw * (a == 1), ncol = ns, nrow = n, byrow = FALSE) * (Fj.a1 * t(apply((dNt - Yt * S.dHazard.a1) / (S.a1 * G.a1), 1, cumsum))
+    - t(apply(Fj.a1 * (dNt - Yt * S.dHazard.a1) / (S.a1 * G.a1), 1, cumsum)))
+  ueif.a1 = 1 / mean(bw * (a == 1)) * (term2.a1 + term3.a1) + 1 / mean(tilt) * term1.a1
 
-  return(list(ueif.a1=ueif.a1, ueif.a0=ueif.a0))
+  return(list(ueif.a1 = ueif.a1, ueif.a0 = ueif.a0))
 }
 #' @title Double Machine Learning for Cumulative Incidence Function in Competing Risks
 #'
@@ -429,15 +449,15 @@ double_ml_cifj_sep_indirect_astar0 <- function(id, a, time, event, bw, tilt, G.a
 #'
 #' # Generate competing risks data
 #' set.seed(123)
-#' data <- make_competing_data(n_obs = 2000, admin_cens = 10)
+#' data = make_competing_data(n_obs = 2000, admin_cens = 10)
 #'
 #' # Define learner libraries
-#' ml_g_surv <- c("survSL.km", "survSL.coxph")
-#' ml_g_cens <- c("survSL.km", "survSL.coxph")
-#' ml_m <- c("SL.mean", "SL.glm")
+#' ml_g_surv = c("survSL.km", "survSL.coxph")
+#' ml_g_cens = c("survSL.km", "survSL.coxph")
+#' ml_m = c("SL.mean", "SL.glm")
 #'
 #' # Estimate CIF treatment effect
-#' dml_cifj <- DoubleMLCIFJ$new(
+#' dml_cifj = DoubleMLCIFJ$new(
 #'   data,
 #'   ml_g_surv = ml_g_surv,
 #'   ml_g_surv_j = ml_g_surv,
@@ -520,27 +540,27 @@ DoubleMLCIFJ = R6Class("DoubleMLCIFJ",
     #' @param apply_cross_fitting (`logical(1)`) \cr
     #' Whether to apply cross-fitting. Default is TRUE.
     initialize = function(data,
-                          ml_g_surv,
-                          ml_g_surv_j,
-                          ml_g_surv_jbar,
-                          ml_g_cens,
-                          ml_m,
-                          admin_cens,
-                          time_col,
-                          event_col,
-                          cause = 1,
-                          tau = NULL,
-                          freq_time = NULL,
-                          ml_framework = "SuperLearner",
-                          n_folds = 2,
-                          n_rep = 1,
-                          score = "ueif",
-                          dml_procedure = "dml2",
-                          draw_sample_splitting = TRUE,
-                          apply_cross_fitting = TRUE) {
+      ml_g_surv,
+      ml_g_surv_j,
+      ml_g_surv_jbar,
+      ml_g_cens,
+      ml_m,
+      admin_cens,
+      time_col,
+      event_col,
+      cause = 1,
+      tau = NULL,
+      freq_time = NULL,
+      ml_framework = "SuperLearner",
+      n_folds = 2,
+      n_rep = 1,
+      score = "ueif",
+      dml_procedure = "dml2",
+      draw_sample_splitting = TRUE,
+      apply_cross_fitting = TRUE) {
 
       # Set tau to admin_cens if not specified
-      private$tau_ <- if (is.null(tau)) admin_cens else tau
+      private$tau_ = if (is.null(tau)) admin_cens else tau
 
       # Validate tau values
       private$validate_tau(admin_cens)
@@ -569,461 +589,174 @@ DoubleMLCIFJ = R6Class("DoubleMLCIFJ",
     },
 
     #' @description
-    #' Compute score elements for DML estimation.
-    #'
-    #' @param ... Additional parameters (not used).
-    #' @return List with psi_a and psi_b for DML framework.
-    score_elements = function(...) {
-      # Check if nuisance estimation has been performed
-      if (is.null(private$all_ueif_)) {
-        stop("Nuisance estimation must be performed before computing scores. Call fit() first.")
-      }
-
-      # Extract UEIF matrices from cross-fitting
-      ueif_a1 <- private$all_ueif_$ueif_a1
-      ueif_a0 <- private$all_ueif_$ueif_a0
-      time_grid <- private$all_ueif_$time_grid
-
-      # For single tau value
-      if (length(private$tau_) == 1) {
-        # Extract tau-specific estimates using extraction function
-        raw_results <- cifj_extract_average(
-          train.ueif.a1 = ueif_a1,
-          train.ueif.a0 = ueif_a0,
-          estimation.ueif.a1 = ueif_a1,
-          estimation.ueif.a0 = ueif_a0,
-          train.time = time_grid,
-          estimation.time = time_grid,
-          tau = private$tau_
-        )
-
-        # Wrap in list with tau
-        inference_results <- list(
-          tau = private$tau_,
-          estimate.a0 = raw_results$estimate.a0,
-          estimate.a1 = raw_results$estimate.a1,
-          estimate.diff = raw_results$estimate.diff,
-          se.a0 = raw_results$estimate.a0.se,
-          se.a1 = raw_results$estimate.a1.se,
-          se.diff = raw_results$estimate.diff.se
-        )
-      } else {
-        # Handle multiple tau values
-        inference_list <- lapply(private$tau_, function(tau_i) {
-          cifj_extract_average(
-            train.ueif.a1 = ueif_a1,
-            train.ueif.a0 = ueif_a0,
-            estimation.ueif.a1 = ueif_a1,
-            estimation.ueif.a0 = ueif_a0,
-            train.time = time_grid,
-            estimation.time = time_grid,
-            tau = tau_i
-          )
-        })
-
-        # Combine results
-        inference_results <- list(
-          tau = private$tau_,
-          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
-          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
-          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
-          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
-          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
-          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
-        )
-      }
-
-      # Store detailed CIF estimates
-      private$cifj_estimates_ <- inference_results
-
-      # Extract individual-level influence functions at tau
-      # Find time index closest to first tau
-      tau_first <- private$tau_[1]
-      tau_idx <- which.min(abs(time_grid - tau_first))
-
-      # Individual influence functions at tau
-      ueif_a1_at_tau <- ueif_a1[, tau_idx]
-      ueif_a0_at_tau <- ueif_a0[, tau_idx]
-
-      # Score for treatment effect: ψ(W) = ψ_1(W) - ψ_0(W)
-      psi_b <- ueif_a1_at_tau - ueif_a0_at_tau
-
-      # Jacobian component (for variance): ∂θ/∂ψ = -1 for linear functional
-      psi_a <- rep(-1, nrow(ueif_a1))
-
-      # Store coef and se for first tau (base class expects scalar)
-      if (length(private$tau_) == 1) {
-        private$coef_ <- inference_results$estimate.diff
-        private$se_ <- inference_results$se.diff
-      } else {
-        private$coef_ <- inference_results$estimate.diff[1]
-        private$se_ <- inference_results$se.diff[1]
-      }
-
-      return(list(psi_a = psi_a, psi_b = psi_b))
+    #' Compute and store separable direct effect with reference treatment A*=1.
+    #' Results accessible via \code{$sep_direct_astar1_estimates}.
+    get_separable_direct_astar1 = function() {
+      private$compute_separable_direct_astar1()
+      invisible(NULL)
     },
 
     #' @description
-    #' Compute separable direct effect with reference treatment A*=1.
-    #'
-    #' @details
-    #' Estimates the direct effect of treatment on CIF, holding the mediator at
-    #' the distribution it would have under treatment A*=1. Requires the model
-    #' to have been fitted first via fit().
-    #'
-    #' @return List with elements:
-    #' \describe{
-    #'   \item{tau}{Evaluation time point(s)}
-    #'   \item{estimate.a0}{CIF estimate under A=0, mediator at A*=1}
-    #'   \item{estimate.a1}{CIF estimate under A=1, mediator at A*=1}
-    #'   \item{estimate.diff}{Direct effect (A=1 - A=0)}
-    #'   \item{se.a0}{Standard error for A=0 estimate}
-    #'   \item{se.a1}{Standard error for A=1 estimate}
-    #'   \item{se.diff}{Standard error for direct effect}
-    #' }
-    fit_separable_direct_astar1 = function() {
-      if (is.null(private$all_nuisance_)) {
-        stop("Model must be fitted first. Call fit() before computing separable effects.")
-      }
-
-      # Use stored nuisance estimates and data
-      n_obs <- self$data$n_obs
-      time_grid <- private$all_ueif_$time_grid
-
-      # Extract all stored data
-      id <- 1:n_obs
-      a <- private$all_nuisance_$a
-      time <- private$all_nuisance_$time
-      event <- private$all_nuisance_$event
-      propensity <- private$all_nuisance_$propensity
-
-      # Compute weights
-      bw <- ifelse(a == 1, 1 / propensity, 1 / (1 - propensity))
-      tilt <- rep(1, n_obs)
-
-      # Call separable direct A*=1 function with stored nuisances
-      ueif_result <- double_ml_cifj_sep_direct_astar1(
-        id = id,
-        a = a,
-        time = time,
-        event = event,
-        bw = bw,
-        tilt = tilt,
-        G.a0 = private$all_nuisance_$G_a0,
-        G.a1 = private$all_nuisance_$G_a1,
-        S.a0 = private$all_nuisance_$S_a0,
-        S.a1 = private$all_nuisance_$S_a1,
-        Sj.a0 = private$all_nuisance_$Sj_a0,
-        Sj.a1 = private$all_nuisance_$Sj_a1,
-        Sjbar.a0 = private$all_nuisance_$Sjbar_a0,
-        Sjbar.a1 = private$all_nuisance_$Sjbar_a1,
-        freq.time = NULL,
-        admin.cens = self$admin_cens
-      )
-
-      # Store UEIFs
-      ueif_a1_sep <- ueif_result$ueif.a1
-      ueif_a0_sep <- ueif_result$ueif.a0
-
-      # Extract estimates at tau using inference function
-      if (length(private$tau_) == 1) {
-        raw_results <- cifj_extract_average(
-          train.ueif.a1 = ueif_a1_sep,
-          train.ueif.a0 = ueif_a0_sep,
-          estimation.ueif.a1 = ueif_a1_sep,
-          estimation.ueif.a0 = ueif_a0_sep,
-          train.time = time_grid,
-          estimation.time = time_grid,
-          tau = private$tau_
-        )
-
-        results <- list(
-          tau = private$tau_,
-          estimate.a0 = raw_results$estimate.a0,
-          estimate.a1 = raw_results$estimate.a1,
-          estimate.diff = raw_results$estimate.diff,
-          se.a0 = raw_results$estimate.a0.se,
-          se.a1 = raw_results$estimate.a1.se,
-          se.diff = raw_results$estimate.diff.se
-        )
-      } else {
-        inference_list <- lapply(private$tau_, function(tau_i) {
-          cifj_extract_average(
-            train.ueif.a1 = ueif_a1_sep,
-            train.ueif.a0 = ueif_a0_sep,
-            estimation.ueif.a1 = ueif_a1_sep,
-            estimation.ueif.a0 = ueif_a0_sep,
-            train.time = time_grid,
-            estimation.time = time_grid,
-            tau = tau_i
-          )
-        })
-
-        results <- list(
-          tau = private$tau_,
-          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
-          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
-          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
-          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
-          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
-          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
-        )
-      }
-
-      return(results)
+    #' Compute and store separable indirect effect with reference treatment A*=1.
+    #' Results accessible via \code{$sep_indirect_astar1_estimates}.
+    get_separable_indirect_astar1 = function() {
+      private$compute_separable_indirect_astar1()
+      invisible(NULL)
     },
 
     #' @description
-    #' Compute separable indirect effect with reference treatment A*=1.
-    #'
-    #' @details
-    #' Estimates the indirect effect of treatment on CIF through mediators,
-    #' with treatment held at A*=1. Requires the model to have been fitted first.
-    #'
-    #' @return List with same structure as fit_separable_direct_astar1()
-    fit_separable_indirect_astar1 = function() {
-      if (is.null(private$all_nuisance_)) {
-        stop("Model must be fitted first. Call fit() before computing separable effects.")
-      }
-
-      n_obs <- self$data$n_obs
-      time_grid <- private$all_ueif_$time_grid
-      id <- 1:n_obs
-      a <- private$all_nuisance_$a
-      time <- private$all_nuisance_$time
-      event <- private$all_nuisance_$event
-      propensity <- private$all_nuisance_$propensity
-      bw <- ifelse(a == 1, 1 / propensity, 1 / (1 - propensity))
-      tilt <- rep(1, n_obs)
-
-      ueif_result <- double_ml_cifj_sep_indirect_astar1(
-        id = id, a = a, time = time, event = event,
-        bw = bw, tilt = tilt,
-        G.a0 = private$all_nuisance_$G_a0, G.a1 = private$all_nuisance_$G_a1,
-        S.a0 = private$all_nuisance_$S_a0, S.a1 = private$all_nuisance_$S_a1,
-        Sj.a0 = private$all_nuisance_$Sj_a0, Sj.a1 = private$all_nuisance_$Sj_a1,
-        Sjbar.a0 = private$all_nuisance_$Sjbar_a0, Sjbar.a1 = private$all_nuisance_$Sjbar_a1,
-        freq.time = NULL, admin.cens = self$admin_cens
-      )
-
-      ueif_a1_sep <- ueif_result$ueif.a1
-      ueif_a0_sep <- ueif_result$ueif.a0
-
-      if (length(private$tau_) == 1) {
-        raw_results <- cifj_extract_average(
-          train.ueif.a1 = ueif_a1_sep, train.ueif.a0 = ueif_a0_sep,
-          estimation.ueif.a1 = ueif_a1_sep, estimation.ueif.a0 = ueif_a0_sep,
-          train.time = time_grid, estimation.time = time_grid,
-          tau = private$tau_
-        )
-
-        results <- list(
-          tau = private$tau_,
-          estimate.a0 = raw_results$estimate.a0,
-          estimate.a1 = raw_results$estimate.a1,
-          estimate.diff = raw_results$estimate.diff,
-          se.a0 = raw_results$estimate.a0.se,
-          se.a1 = raw_results$estimate.a1.se,
-          se.diff = raw_results$estimate.diff.se
-        )
-      } else {
-        inference_list <- lapply(private$tau_, function(tau_i) {
-          cifj_extract_average(
-            train.ueif.a1 = ueif_a1_sep, train.ueif.a0 = ueif_a0_sep,
-            estimation.ueif.a1 = ueif_a1_sep, estimation.ueif.a0 = ueif_a0_sep,
-            train.time = time_grid, estimation.time = time_grid,
-            tau = tau_i
-          )
-        })
-
-        results <- list(
-          tau = private$tau_,
-          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
-          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
-          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
-          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
-          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
-          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
-        )
-      }
-
-      return(results)
+    #' Compute and store separable direct effect with reference treatment A*=0.
+    #' Results accessible via \code{$sep_direct_astar0_estimates}.
+    get_separable_direct_astar0 = function() {
+      private$compute_separable_direct_astar0()
+      invisible(NULL)
     },
 
     #' @description
-    #' Compute separable direct effect with reference treatment A*=0.
-    #'
-    #' @details
-    #' Estimates the direct effect of treatment on CIF, holding the mediator at
-    #' the distribution it would have under treatment A*=0.
-    #'
-    #' @return List with same structure as fit_separable_direct_astar1()
-    fit_separable_direct_astar0 = function() {
-      if (is.null(private$all_nuisance_)) {
-        stop("Model must be fitted first. Call fit() before computing separable effects.")
-      }
-
-      n_obs <- self$data$n_obs
-      time_grid <- private$all_ueif_$time_grid
-      id <- 1:n_obs
-      a <- private$all_nuisance_$a
-      time <- private$all_nuisance_$time
-      event <- private$all_nuisance_$event
-      propensity <- private$all_nuisance_$propensity
-      bw <- ifelse(a == 1, 1 / propensity, 1 / (1 - propensity))
-      tilt <- rep(1, n_obs)
-
-      ueif_result <- double_ml_cifj_sep_direct_astar0(
-        id = id, a = a, time = time, event = event,
-        bw = bw, tilt = tilt,
-        G.a0 = private$all_nuisance_$G_a0, G.a1 = private$all_nuisance_$G_a1,
-        S.a0 = private$all_nuisance_$S_a0, S.a1 = private$all_nuisance_$S_a1,
-        Sj.a0 = private$all_nuisance_$Sj_a0, Sj.a1 = private$all_nuisance_$Sj_a1,
-        Sjbar.a0 = private$all_nuisance_$Sjbar_a0, Sjbar.a1 = private$all_nuisance_$Sjbar_a1,
-        freq.time = NULL, admin.cens = self$admin_cens
-      )
-
-      ueif_a1_sep <- ueif_result$ueif.a1
-      ueif_a0_sep <- ueif_result$ueif.a0
-
-      if (length(private$tau_) == 1) {
-        raw_results <- cifj_extract_average(
-          train.ueif.a1 = ueif_a1_sep, train.ueif.a0 = ueif_a0_sep,
-          estimation.ueif.a1 = ueif_a1_sep, estimation.ueif.a0 = ueif_a0_sep,
-          train.time = time_grid, estimation.time = time_grid,
-          tau = private$tau_
-        )
-
-        results <- list(
-          tau = private$tau_,
-          estimate.a0 = raw_results$estimate.a0,
-          estimate.a1 = raw_results$estimate.a1,
-          estimate.diff = raw_results$estimate.diff,
-          se.a0 = raw_results$estimate.a0.se,
-          se.a1 = raw_results$estimate.a1.se,
-          se.diff = raw_results$estimate.diff.se
-        )
-      } else {
-        inference_list <- lapply(private$tau_, function(tau_i) {
-          cifj_extract_average(
-            train.ueif.a1 = ueif_a1_sep, train.ueif.a0 = ueif_a0_sep,
-            estimation.ueif.a1 = ueif_a1_sep, estimation.ueif.a0 = ueif_a0_sep,
-            train.time = time_grid, estimation.time = time_grid,
-            tau = tau_i
-          )
-        })
-
-        results <- list(
-          tau = private$tau_,
-          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
-          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
-          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
-          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
-          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
-          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
-        )
-      }
-
-      return(results)
+    #' Compute and store separable indirect effect with reference treatment A*=0.
+    #' Results accessible via \code{$sep_indirect_astar0_estimates}.
+    get_separable_indirect_astar0 = function() {
+      private$compute_separable_indirect_astar0()
+      invisible(NULL)
     },
 
     #' @description
-    #' Compute separable indirect effect with reference treatment A*=0.
+    #' Get full-curve inference for the cumulative incidence function difference.
+    #' Returns pointwise and simultaneous confidence bands across all time points.
     #'
-    #' @details
-    #' Estimates the indirect effect of treatment on CIF through mediators,
-    #' with treatment held at A*=0.
+    #' @param npath (`integer(1)`) \cr
+    #' Number of bootstrap paths for simultaneous confidence bands. Default is 100.
     #'
-    #' @return List with same structure as fit_separable_direct_astar1()
-    fit_separable_indirect_astar0 = function() {
-      if (is.null(private$all_nuisance_)) {
-        stop("Model must be fitted first. Call fit() before computing separable effects.")
+    #' @return Data frame with point estimates, standard errors, confidence intervals,
+    #' and simultaneous confidence bands at each time point.
+    get_inference_curve = function(npath = 100) {
+      if (is.null(private$all_ueif_a1_)) {
+        stop("Model must be fitted first. Call fit() method.")
       }
-
-      n_obs <- self$data$n_obs
-      time_grid <- private$all_ueif_$time_grid
-      id <- 1:n_obs
-      a <- private$all_nuisance_$a
-      time <- private$all_nuisance_$time
-      event <- private$all_nuisance_$event
-      propensity <- private$all_nuisance_$propensity
-      bw <- ifelse(a == 1, 1 / propensity, 1 / (1 - propensity))
-      tilt <- rep(1, n_obs)
-
-      ueif_result <- double_ml_cifj_sep_indirect_astar0(
-        id = id, a = a, time = time, event = event,
-        bw = bw, tilt = tilt,
-        G.a0 = private$all_nuisance_$G_a0, G.a1 = private$all_nuisance_$G_a1,
-        S.a0 = private$all_nuisance_$S_a0, S.a1 = private$all_nuisance_$S_a1,
-        Sj.a0 = private$all_nuisance_$Sj_a0, Sj.a1 = private$all_nuisance_$Sj_a1,
-        Sjbar.a0 = private$all_nuisance_$Sjbar_a0, Sjbar.a1 = private$all_nuisance_$Sjbar_a1,
-        freq.time = NULL, admin.cens = self$admin_cens
+      cifj_inference(
+        npath = npath,
+        ueif.a1.list = list(private$all_ueif_a1_),
+        ueif.a0.list = list(private$all_ueif_a0_),
+        time.list = list(private$time_grid_)
       )
+    },
 
-      ueif_a1_sep <- ueif_result$ueif.a1
-      ueif_a0_sep <- ueif_result$ueif.a0
-
-      if (length(private$tau_) == 1) {
-        raw_results <- cifj_extract_average(
-          train.ueif.a1 = ueif_a1_sep, train.ueif.a0 = ueif_a0_sep,
-          estimation.ueif.a1 = ueif_a1_sep, estimation.ueif.a0 = ueif_a0_sep,
-          train.time = time_grid, estimation.time = time_grid,
-          tau = private$tau_
-        )
-
-        results <- list(
-          tau = private$tau_,
-          estimate.a0 = raw_results$estimate.a0,
-          estimate.a1 = raw_results$estimate.a1,
-          estimate.diff = raw_results$estimate.diff,
-          se.a0 = raw_results$estimate.a0.se,
-          se.a1 = raw_results$estimate.a1.se,
-          se.diff = raw_results$estimate.diff.se
-        )
-      } else {
-        inference_list <- lapply(private$tau_, function(tau_i) {
-          cifj_extract_average(
-            train.ueif.a1 = ueif_a1_sep, train.ueif.a0 = ueif_a0_sep,
-            estimation.ueif.a1 = ueif_a1_sep, estimation.ueif.a0 = ueif_a0_sep,
-            train.time = time_grid, estimation.time = time_grid,
-            tau = tau_i
-          )
-        })
-
-        results <- list(
-          tau = private$tau_,
-          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
-          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
-          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
-          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
-          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
-          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
-        )
+    #' Compute inference curve with simultaneous confidence bands for separable direct effect (A*=1).
+    #' Requires \code{get_separable_direct_astar1()} to be called first.
+    #' @param npath Number of bootstrap paths for confidence bands.
+    #' @return Data frame with point estimates, confidence intervals, and confidence bands.
+    get_inference_curve_sep_direct_astar1 = function(npath = 100) {
+      if (is.null(private$sep_direct_astar1_ueif_a1_)) {
+        stop("Separable direct A*=1 effect must be computed first. Call get_separable_direct_astar1().")
       }
+      cifj_inference(
+        npath = npath,
+        ueif.a1.list = list(private$sep_direct_astar1_ueif_a1_),
+        ueif.a0.list = list(private$sep_direct_astar1_ueif_a0_),
+        time.list = list(private$time_grid_)
+      )
+    },
 
-      return(results)
+    #' Compute inference curve with simultaneous confidence bands for separable indirect effect (A*=1).
+    #' Requires \code{get_separable_indirect_astar1()} to be called first.
+    #' @param npath Number of bootstrap paths for confidence bands.
+    #' @return Data frame with point estimates, confidence intervals, and confidence bands.
+    get_inference_curve_sep_indirect_astar1 = function(npath = 100) {
+      if (is.null(private$sep_indirect_astar1_ueif_a1_)) {
+        stop("Separable indirect A*=1 effect must be computed first. Call get_separable_indirect_astar1().")
+      }
+      cifj_inference(
+        npath = npath,
+        ueif.a1.list = list(private$sep_indirect_astar1_ueif_a1_),
+        ueif.a0.list = list(private$sep_indirect_astar1_ueif_a0_),
+        time.list = list(private$time_grid_)
+      )
+    },
+
+    #' Compute inference curve with simultaneous confidence bands for separable direct effect (A*=0).
+    #' Requires \code{get_separable_direct_astar0()} to be called first.
+    #' @param npath Number of bootstrap paths for confidence bands.
+    #' @return Data frame with point estimates, confidence intervals, and confidence bands.
+    get_inference_curve_sep_direct_astar0 = function(npath = 100) {
+      if (is.null(private$sep_direct_astar0_ueif_a1_)) {
+        stop("Separable direct A*=0 effect must be computed first. Call get_separable_direct_astar0().")
+      }
+      cifj_inference(
+        npath = npath,
+        ueif.a1.list = list(private$sep_direct_astar0_ueif_a1_),
+        ueif.a0.list = list(private$sep_direct_astar0_ueif_a0_),
+        time.list = list(private$time_grid_)
+      )
+    },
+
+    #' Compute inference curve with simultaneous confidence bands for separable indirect effect (A*=0).
+    #' Requires \code{get_separable_indirect_astar0()} to be called first.
+    #' @param npath Number of bootstrap paths for confidence bands.
+    #' @return Data frame with point estimates, confidence intervals, and confidence bands.
+    get_inference_curve_sep_indirect_astar0 = function(npath = 100) {
+      if (is.null(private$sep_indirect_astar0_ueif_a1_)) {
+        stop("Separable indirect A*=0 effect must be computed first. Call get_separable_indirect_astar0().")
+      }
+      cifj_inference(
+        npath = npath,
+        ueif.a1.list = list(private$sep_indirect_astar0_ueif_a1_),
+        ueif.a0.list = list(private$sep_indirect_astar0_ueif_a0_),
+        time.list = list(private$time_grid_)
+      )
     }
   ),
 
   active = list(
-    #' @field coef Treatment effect estimate(s)
-    coef = function() private$coef_,
+    #' @field coef Treatment effect estimate (from extract_average).
+    #' For multiple tau, returns the first tau's estimate; use cifj_estimates for all.
+    coef = function() {
+      if (!is.null(private$cifj_estimates_)) {
+        est = private$cifj_estimates_$estimate.diff
+        if (length(est) > 1) {
+          return(est[1])
+        }
+        return(est)
+      }
+      return(private$coef_)
+    },
 
-    #' @field se Standard error of treatment effect estimate(s)
-    se = function() private$se_,
+    #' @field se Standard error of treatment effect estimate (from extract_average).
+    #' For multiple tau, returns the first tau's SE; use cifj_estimates for all.
+    se = function() {
+      if (!is.null(private$cifj_estimates_)) {
+        se_val = private$cifj_estimates_$se.diff
+        if (length(se_val) > 1) {
+          return(se_val[1])
+        }
+        return(se_val)
+      }
+      return(private$se_)
+    },
 
     #' @field tau Evaluation time point(s)
     tau = function(value) {
       if (missing(value)) {
         return(private$tau_)
       } else {
-        private$tau_ <- value
+        private$tau_ = value
         private$validate_tau(private$admin_cens_)
       }
     },
 
     #' @field cifj_estimates All CIF estimates and standard errors
-    cifj_estimates = function() private$cifj_estimates_
+    cifj_estimates = function() private$cifj_estimates_,
+
+    #' @field sep_direct_astar1_estimates Separable direct effect estimates (A*=1)
+    sep_direct_astar1_estimates = function() private$sep_direct_astar1_estimates_,
+
+    #' @field sep_indirect_astar1_estimates Separable indirect effect estimates (A*=1)
+    sep_indirect_astar1_estimates = function() private$sep_indirect_astar1_estimates_,
+
+    #' @field sep_direct_astar0_estimates Separable direct effect estimates (A*=0)
+    sep_direct_astar0_estimates = function() private$sep_direct_astar0_estimates_,
+
+    #' @field sep_indirect_astar0_estimates Separable indirect effect estimates (A*=0)
+    sep_indirect_astar0_estimates = function() private$sep_indirect_astar0_estimates_
   ),
 
   private = list(
@@ -1031,8 +764,22 @@ DoubleMLCIFJ = R6Class("DoubleMLCIFJ",
     coef_ = NULL,
     se_ = NULL,
     cifj_estimates_ = NULL,
-    all_ueif_ = NULL,
-    all_nuisance_ = NULL,  # Store nuisance estimates for separable effects
+    sep_direct_astar1_estimates_ = NULL,
+    sep_indirect_astar1_estimates_ = NULL,
+    sep_direct_astar0_estimates_ = NULL,
+    sep_indirect_astar0_estimates_ = NULL,
+    all_ueif_a1_ = NULL,
+    all_ueif_a0_ = NULL,
+    time_grid_ = NULL,
+    all_nuisance_ = NULL,
+    sep_direct_astar1_ueif_a1_ = NULL,
+    sep_direct_astar1_ueif_a0_ = NULL,
+    sep_indirect_astar1_ueif_a1_ = NULL,
+    sep_indirect_astar1_ueif_a0_ = NULL,
+    sep_direct_astar0_ueif_a1_ = NULL,
+    sep_direct_astar0_ueif_a0_ = NULL,
+    sep_indirect_astar0_ueif_a1_ = NULL,
+    sep_indirect_astar0_ueif_a0_ = NULL,
 
     validate_tau = function(admin_cens) {
       if (any(private$tau_ <= 0)) {
@@ -1044,119 +791,428 @@ DoubleMLCIFJ = R6Class("DoubleMLCIFJ",
       invisible(NULL)
     },
 
-    # Main nuisance estimation method called by base DoubleML class
-    nuisance_est = function(smpls, ...) {
-      # Extract full data
-      full_data <- self$data$data
-      n_obs <- self$data$n_obs
-
-      # Get time grid
-      time_grid <- self$get_time_grid()
-      n_times <- length(time_grid)
-
-      # Initialize prediction matrices for all observations
-      S_a0_pred <- matrix(NA, nrow = n_obs, ncol = n_times)
-      S_a1_pred <- matrix(NA, nrow = n_obs, ncol = n_times)
-      Sj_a0_pred <- matrix(NA, nrow = n_obs, ncol = n_times)
-      Sj_a1_pred <- matrix(NA, nrow = n_obs, ncol = n_times)
-      Sjbar_a0_pred <- matrix(NA, nrow = n_obs, ncol = n_times)
-      Sjbar_a1_pred <- matrix(NA, nrow = n_obs, ncol = n_times)
-      G_a0_pred <- matrix(NA, nrow = n_obs, ncol = n_times)
-      G_a1_pred <- matrix(NA, nrow = n_obs, ncol = n_times)
-      propensity_pred <- rep(NA, n_obs)
-
-      # Loop over folds for cross-fitting
-      for (i_fold in seq_along(smpls$train_ids)) {
-        train_ids <- smpls$train_ids[[i_fold]]
-        test_ids <- smpls$test_ids[[i_fold]]
-
-        # Get train/test data
-        train_data <- full_data[train_ids, ]
-        test_data <- full_data[test_ids, ]
-
-        # Fit nuisance functions on train, predict on test
-        ml_results <- private$ml_nuisance_est_superlearner(train_data, test_data, time_grid)
-
-        # Store predictions for test fold
-        S_a0_pred[test_ids, ] <- ml_results$S_a0
-        S_a1_pred[test_ids, ] <- ml_results$S_a1
-        Sj_a0_pred[test_ids, ] <- ml_results$Sj_a0
-        Sj_a1_pred[test_ids, ] <- ml_results$Sj_a1
-        Sjbar_a0_pred[test_ids, ] <- ml_results$Sjbar_a0
-        Sjbar_a1_pred[test_ids, ] <- ml_results$Sjbar_a1
-        G_a0_pred[test_ids, ] <- ml_results$G_a0
-        G_a1_pred[test_ids, ] <- ml_results$G_a1
-        propensity_pred[test_ids] <- ml_results$propensity
+    compute_separable_direct_astar1 = function() {
+      if (is.null(private$all_nuisance_)) {
+        stop("Model must be fitted first. Call fit() before computing separable effects.")
       }
 
-      # Calculate balancing weights (inverse propensity weights)
-      bw <- ifelse(full_data[[self$data$d_cols]] == 1,
-                   1 / propensity_pred,
-                   1 / (1 - propensity_pred))
+      n_obs = self$data$n_obs
+      time_grid = self$get_time_grid()
+      id = 1:n_obs
+      a = private$all_nuisance_$a
+      time = private$all_nuisance_$time
+      event = private$all_nuisance_$event
+      propensity = private$all_nuisance_$propensity
+      bw = ifelse(a == 1, 1 / propensity, 1 / (1 - propensity))
+      tilt = rep(1, n_obs)
 
-      # Calculate tilting weights (for ATE, uniform weights)
-      tilt <- rep(1, n_obs)
-
-      # Compute UEIF using main CIF function ON FULL SAMPLE with cross-fitted predictions
-      ueif_result <- double_ml_cifj(
-        id = 1:n_obs,
-        a = full_data[[self$data$d_cols]],
-        time = full_data[[self$time_col]],
-        event = full_data[[self$event_col]],
-        bw = bw,
-        tilt = tilt,
-        G.a0 = G_a0_pred,
-        G.a1 = G_a1_pred,
-        S.a0 = S_a0_pred,
-        S.a1 = S_a1_pred,
-        Sj.a0 = Sj_a0_pred,
-        Sj.a1 = Sj_a1_pred,
-        freq.time = private$freq_time_,
-        admin.cens = self$admin_cens
+      ueif_result = double_ml_cifj_sep_direct_astar1(
+        id = id, a = a, time = time, event = event,
+        bw = bw, tilt = tilt,
+        G.a0 = private$all_nuisance_$G_a0, G.a1 = private$all_nuisance_$G_a1,
+        S.a0 = private$all_nuisance_$S_a0, S.a1 = private$all_nuisance_$S_a1,
+        Sj.a0 = private$all_nuisance_$Sj_a0, Sj.a1 = private$all_nuisance_$Sj_a1,
+        Sjbar.a0 = private$all_nuisance_$Sjbar_a0, Sjbar.a1 = private$all_nuisance_$Sjbar_a1,
+        freq.time = NULL, admin.cens = self$admin_cens
       )
 
-      # Store UEIF and nuisances for inference
-      private$all_ueif_ <- list(
-        ueif_a1 = ueif_result$ueif.a1,
-        ueif_a0 = ueif_result$ueif.a0,
-        time_grid = time_grid
+      ueif_a1_sep = ueif_result$ueif.a1
+      ueif_a0_sep = ueif_result$ueif.a0
+      private$sep_direct_astar1_ueif_a1_ = ueif_a1_sep
+      private$sep_direct_astar1_ueif_a0_ = ueif_a0_sep
+
+      if (length(private$tau_) == 1) {
+        raw_results = cifj_extract_average(
+          ueif.a1.list = list(ueif_a1_sep),
+          ueif.a0.list = list(ueif_a0_sep),
+          time.list = list(time_grid),
+          tau = private$tau_
+        )
+        results = list(
+          tau = private$tau_,
+          estimate.a0 = raw_results$estimate.a0,
+          estimate.a1 = raw_results$estimate.a1,
+          estimate.diff = raw_results$estimate.diff,
+          se.a0 = raw_results$estimate.a0.se,
+          se.a1 = raw_results$estimate.a1.se,
+          se.diff = raw_results$estimate.diff.se
+        )
+      } else {
+        inference_list = lapply(private$tau_, function(tau_i) {
+          cifj_extract_average(
+            ueif.a1.list = list(ueif_a1_sep),
+            ueif.a0.list = list(ueif_a0_sep),
+            time.list = list(time_grid),
+            tau = tau_i
+          )
+        })
+        results = list(
+          tau = private$tau_,
+          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
+          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
+          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
+          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
+          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
+          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
+        )
+      }
+
+      private$sep_direct_astar1_estimates_ = results
+      invisible(NULL)
+    },
+
+    compute_separable_indirect_astar1 = function() {
+      if (is.null(private$all_nuisance_)) {
+        stop("Model must be fitted first. Call fit() before computing separable effects.")
+      }
+
+      n_obs = self$data$n_obs
+      time_grid = self$get_time_grid()
+      id = 1:n_obs
+      a = private$all_nuisance_$a
+      time = private$all_nuisance_$time
+      event = private$all_nuisance_$event
+      propensity = private$all_nuisance_$propensity
+      bw = ifelse(a == 1, 1 / propensity, 1 / (1 - propensity))
+      tilt = rep(1, n_obs)
+
+      ueif_result = double_ml_cifj_sep_indirect_astar1(
+        id = id, a = a, time = time, event = event,
+        bw = bw, tilt = tilt,
+        G.a0 = private$all_nuisance_$G_a0, G.a1 = private$all_nuisance_$G_a1,
+        S.a0 = private$all_nuisance_$S_a0, S.a1 = private$all_nuisance_$S_a1,
+        Sj.a0 = private$all_nuisance_$Sj_a0, Sj.a1 = private$all_nuisance_$Sj_a1,
+        Sjbar.a0 = private$all_nuisance_$Sjbar_a0, Sjbar.a1 = private$all_nuisance_$Sjbar_a1,
+        freq.time = NULL, admin.cens = self$admin_cens
       )
 
-      # Store nuisance estimates for separable effects
-      private$all_nuisance_ <- list(
-        S_a0 = S_a0_pred,
-        S_a1 = S_a1_pred,
-        Sj_a0 = Sj_a0_pred,
-        Sj_a1 = Sj_a1_pred,
-        Sjbar_a0 = Sjbar_a0_pred,
-        Sjbar_a1 = Sjbar_a1_pred,
-        G_a0 = G_a0_pred,
-        G_a1 = G_a1_pred,
+      ueif_a1_sep = ueif_result$ueif.a1
+      ueif_a0_sep = ueif_result$ueif.a0
+      private$sep_indirect_astar1_ueif_a1_ = ueif_a1_sep
+      private$sep_indirect_astar1_ueif_a0_ = ueif_a0_sep
+
+      if (length(private$tau_) == 1) {
+        raw_results = cifj_extract_average(
+          ueif.a1.list = list(ueif_a1_sep),
+          ueif.a0.list = list(ueif_a0_sep),
+          time.list = list(time_grid),
+          tau = private$tau_
+        )
+        results = list(
+          tau = private$tau_,
+          estimate.a0 = raw_results$estimate.a0,
+          estimate.a1 = raw_results$estimate.a1,
+          estimate.diff = raw_results$estimate.diff,
+          se.a0 = raw_results$estimate.a0.se,
+          se.a1 = raw_results$estimate.a1.se,
+          se.diff = raw_results$estimate.diff.se
+        )
+      } else {
+        inference_list = lapply(private$tau_, function(tau_i) {
+          cifj_extract_average(
+            ueif.a1.list = list(ueif_a1_sep),
+            ueif.a0.list = list(ueif_a0_sep),
+            time.list = list(time_grid),
+            tau = tau_i
+          )
+        })
+        results = list(
+          tau = private$tau_,
+          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
+          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
+          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
+          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
+          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
+          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
+        )
+      }
+
+      private$sep_indirect_astar1_estimates_ = results
+      invisible(NULL)
+    },
+
+    compute_separable_direct_astar0 = function() {
+      if (is.null(private$all_nuisance_)) {
+        stop("Model must be fitted first. Call fit() before computing separable effects.")
+      }
+
+      n_obs = self$data$n_obs
+      time_grid = self$get_time_grid()
+      id = 1:n_obs
+      a = private$all_nuisance_$a
+      time = private$all_nuisance_$time
+      event = private$all_nuisance_$event
+      propensity = private$all_nuisance_$propensity
+      bw = ifelse(a == 1, 1 / propensity, 1 / (1 - propensity))
+      tilt = rep(1, n_obs)
+
+      ueif_result = double_ml_cifj_sep_direct_astar0(
+        id = id, a = a, time = time, event = event,
+        bw = bw, tilt = tilt,
+        G.a0 = private$all_nuisance_$G_a0, G.a1 = private$all_nuisance_$G_a1,
+        S.a0 = private$all_nuisance_$S_a0, S.a1 = private$all_nuisance_$S_a1,
+        Sj.a0 = private$all_nuisance_$Sj_a0, Sj.a1 = private$all_nuisance_$Sj_a1,
+        Sjbar.a0 = private$all_nuisance_$Sjbar_a0, Sjbar.a1 = private$all_nuisance_$Sjbar_a1,
+        freq.time = NULL, admin.cens = self$admin_cens
+      )
+
+      ueif_a1_sep = ueif_result$ueif.a1
+      ueif_a0_sep = ueif_result$ueif.a0
+      private$sep_direct_astar0_ueif_a1_ = ueif_a1_sep
+      private$sep_direct_astar0_ueif_a0_ = ueif_a0_sep
+
+      if (length(private$tau_) == 1) {
+        raw_results = cifj_extract_average(
+          ueif.a1.list = list(ueif_a1_sep),
+          ueif.a0.list = list(ueif_a0_sep),
+          time.list = list(time_grid),
+          tau = private$tau_
+        )
+        results = list(
+          tau = private$tau_,
+          estimate.a0 = raw_results$estimate.a0,
+          estimate.a1 = raw_results$estimate.a1,
+          estimate.diff = raw_results$estimate.diff,
+          se.a0 = raw_results$estimate.a0.se,
+          se.a1 = raw_results$estimate.a1.se,
+          se.diff = raw_results$estimate.diff.se
+        )
+      } else {
+        inference_list = lapply(private$tau_, function(tau_i) {
+          cifj_extract_average(
+            ueif.a1.list = list(ueif_a1_sep),
+            ueif.a0.list = list(ueif_a0_sep),
+            time.list = list(time_grid),
+            tau = tau_i
+          )
+        })
+        results = list(
+          tau = private$tau_,
+          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
+          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
+          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
+          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
+          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
+          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
+        )
+      }
+
+      private$sep_direct_astar0_estimates_ = results
+      invisible(NULL)
+    },
+
+    compute_separable_indirect_astar0 = function() {
+      if (is.null(private$all_nuisance_)) {
+        stop("Model must be fitted first. Call fit() before computing separable effects.")
+      }
+
+      n_obs = self$data$n_obs
+      time_grid = self$get_time_grid()
+      id = 1:n_obs
+      a = private$all_nuisance_$a
+      time = private$all_nuisance_$time
+      event = private$all_nuisance_$event
+      propensity = private$all_nuisance_$propensity
+      bw = ifelse(a == 1, 1 / propensity, 1 / (1 - propensity))
+      tilt = rep(1, n_obs)
+
+      ueif_result = double_ml_cifj_sep_indirect_astar0(
+        id = id, a = a, time = time, event = event,
+        bw = bw, tilt = tilt,
+        G.a0 = private$all_nuisance_$G_a0, G.a1 = private$all_nuisance_$G_a1,
+        S.a0 = private$all_nuisance_$S_a0, S.a1 = private$all_nuisance_$S_a1,
+        Sj.a0 = private$all_nuisance_$Sj_a0, Sj.a1 = private$all_nuisance_$Sj_a1,
+        Sjbar.a0 = private$all_nuisance_$Sjbar_a0, Sjbar.a1 = private$all_nuisance_$Sjbar_a1,
+        freq.time = NULL, admin.cens = self$admin_cens
+      )
+
+      ueif_a1_sep = ueif_result$ueif.a1
+      ueif_a0_sep = ueif_result$ueif.a0
+      private$sep_indirect_astar0_ueif_a1_ = ueif_a1_sep
+      private$sep_indirect_astar0_ueif_a0_ = ueif_a0_sep
+
+      if (length(private$tau_) == 1) {
+        raw_results = cifj_extract_average(
+          ueif.a1.list = list(ueif_a1_sep),
+          ueif.a0.list = list(ueif_a0_sep),
+          time.list = list(time_grid),
+          tau = private$tau_
+        )
+        results = list(
+          tau = private$tau_,
+          estimate.a0 = raw_results$estimate.a0,
+          estimate.a1 = raw_results$estimate.a1,
+          estimate.diff = raw_results$estimate.diff,
+          se.a0 = raw_results$estimate.a0.se,
+          se.a1 = raw_results$estimate.a1.se,
+          se.diff = raw_results$estimate.diff.se
+        )
+      } else {
+        inference_list = lapply(private$tau_, function(tau_i) {
+          cifj_extract_average(
+            ueif.a1.list = list(ueif_a1_sep),
+            ueif.a0.list = list(ueif_a0_sep),
+            time.list = list(time_grid),
+            tau = tau_i
+          )
+        })
+        results = list(
+          tau = private$tau_,
+          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
+          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
+          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
+          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
+          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
+          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
+        )
+      }
+
+      private$sep_indirect_astar0_estimates_ = results
+      invisible(NULL)
+    },
+
+    # Main nuisance estimation method called by base DoubleML class
+    nuisance_est = function(smpls, ...) {
+      full_data = self$data$data
+      n_obs = self$data$n_obs
+      K = length(smpls$train_ids)
+
+      # Global time grid
+      global_time_grid = self$get_time_grid()
+      n_times = length(global_time_grid)
+
+      # Assemble cross-fitted predictions on global time grid
+      S_a0_pred = matrix(NA, nrow = n_obs, ncol = n_times)
+      S_a1_pred = matrix(NA, nrow = n_obs, ncol = n_times)
+      Sj_a0_pred = matrix(NA, nrow = n_obs, ncol = n_times)
+      Sj_a1_pred = matrix(NA, nrow = n_obs, ncol = n_times)
+      Sjbar_a0_pred = matrix(NA, nrow = n_obs, ncol = n_times)
+      Sjbar_a1_pred = matrix(NA, nrow = n_obs, ncol = n_times)
+      G_a0_pred = matrix(NA, nrow = n_obs, ncol = n_times)
+      G_a1_pred = matrix(NA, nrow = n_obs, ncol = n_times)
+      propensity_pred = rep(NA, n_obs)
+
+      for (k in seq_len(K)) {
+        train_ids = smpls$train_ids[[k]]
+        test_ids = smpls$test_ids[[k]]
+        train_data = full_data[train_ids, ]
+        test_data = full_data[test_ids, ]
+
+        ml_results = private$ml_nuisance_est_superlearner(
+          train_data, test_data, global_time_grid)
+
+        S_a0_pred[test_ids, ] = ml_results$S_a0
+        S_a1_pred[test_ids, ] = ml_results$S_a1
+        Sj_a0_pred[test_ids, ] = ml_results$Sj_a0
+        Sj_a1_pred[test_ids, ] = ml_results$Sj_a1
+        Sjbar_a0_pred[test_ids, ] = ml_results$Sjbar_a0
+        Sjbar_a1_pred[test_ids, ] = ml_results$Sjbar_a1
+        G_a0_pred[test_ids, ] = ml_results$G_a0
+        G_a1_pred[test_ids, ] = ml_results$G_a1
+        propensity_pred[test_ids] = ml_results$propensity
+      }
+
+      # Store assembled nuisance predictions
+      private$all_nuisance_ = list(
+        S_a0 = S_a0_pred, S_a1 = S_a1_pred,
+        Sj_a0 = Sj_a0_pred, Sj_a1 = Sj_a1_pred,
+        Sjbar_a0 = Sjbar_a0_pred, Sjbar_a1 = Sjbar_a1_pred,
+        G_a0 = G_a0_pred, G_a1 = G_a1_pred,
         propensity = propensity_pred,
         a = full_data[[self$data$d_cols]],
         time = full_data[[self$time_col]],
         event = full_data[[self$event_col]]
       )
 
-      # Compute scores via score_elements
-      scores <- self$score_elements()
+      # Compute estimates
+      private$compute_total_effect()
+      invisible(NULL)
+    },
 
-      # Return scores in DML format
-      psi_elements <- list(psi_a = scores$psi_a, psi_b = scores$psi_b)
-      return(psi_elements)
+    compute_total_effect = function() {
+      n_obs = self$data$n_obs
+      time_grid = self$get_time_grid()
+
+      # Compute weights from stored nuisance
+      a = private$all_nuisance_$a
+      propensity = private$all_nuisance_$propensity
+      bw = ifelse(a == 1, 1 / propensity, 1 / (1 - propensity))
+      tilt = rep(1, n_obs)
+
+      # Compute UEIF on all obs at once
+      ueif_result = double_ml_cifj(
+        id = 1:n_obs,
+        a = a,
+        time = private$all_nuisance_$time,
+        event = private$all_nuisance_$event,
+        bw = bw,
+        tilt = tilt,
+        G.a0 = private$all_nuisance_$G_a0,
+        G.a1 = private$all_nuisance_$G_a1,
+        S.a0 = private$all_nuisance_$S_a0,
+        S.a1 = private$all_nuisance_$S_a1,
+        Sj.a0 = private$all_nuisance_$Sj_a0,
+        Sj.a1 = private$all_nuisance_$Sj_a1,
+        freq.time = private$freq_time_,
+        admin.cens = self$admin_cens
+      )
+
+      # Store for inference
+      private$all_ueif_a1_ = ueif_result$ueif.a1
+      private$all_ueif_a0_ = ueif_result$ueif.a0
+      private$time_grid_ = time_grid
+
+      # Extract estimates (single matrix wrapped in list)
+      if (length(private$tau_) == 1) {
+        raw_results = cifj_extract_average(
+          ueif.a1.list = list(ueif_result$ueif.a1),
+          ueif.a0.list = list(ueif_result$ueif.a0),
+          time.list = list(time_grid),
+          tau = private$tau_
+        )
+        private$cifj_estimates_ = list(
+          tau = private$tau_,
+          estimate.a0 = raw_results$estimate.a0,
+          estimate.a1 = raw_results$estimate.a1,
+          estimate.diff = raw_results$estimate.diff,
+          se.a0 = raw_results$estimate.a0.se,
+          se.a1 = raw_results$estimate.a1.se,
+          se.diff = raw_results$estimate.diff.se
+        )
+      } else {
+        inference_list = lapply(private$tau_, function(tau_i) {
+          cifj_extract_average(
+            ueif.a1.list = list(ueif_result$ueif.a1),
+            ueif.a0.list = list(ueif_result$ueif.a0),
+            time.list = list(time_grid),
+            tau = tau_i
+          )
+        })
+        private$cifj_estimates_ = list(
+          tau = private$tau_,
+          estimate.a0 = sapply(inference_list, function(x) x$estimate.a0),
+          estimate.a1 = sapply(inference_list, function(x) x$estimate.a1),
+          estimate.diff = sapply(inference_list, function(x) x$estimate.diff),
+          se.a0 = sapply(inference_list, function(x) x$estimate.a0.se),
+          se.a1 = sapply(inference_list, function(x) x$estimate.a1.se),
+          se.diff = sapply(inference_list, function(x) x$estimate.diff.se)
+        )
+      }
+
+      invisible(NULL)
     },
 
     # ML nuisance estimation using SuperLearner for competing risks
     ml_nuisance_est_superlearner = function(train_data, test_data, time_grid) {
       # Extract column names
-      time_col <- private$time_col_
-      event_col <- private$event_col_
-      d_col <- self$data$d_cols
-      x_cols <- self$data$x_cols
+      time_col = private$time_col_
+      event_col = private$event_col_
+      d_col = self$data$d_cols
+      x_cols = self$data$x_cols
 
       # Fit overall event survival functions S(t|X,A) and censoring G(t|X,A)
       # Single call returns both event.SL.predict and cens.SL.predict
-      surv_result <- fit_survival_functions(
+      surv_result = fit_survival_functions(
         data = train_data,
         time_col = time_col,
         event_col = event_col,
@@ -1168,17 +1224,17 @@ DoubleMLCIFJ = R6Class("DoubleMLCIFJ",
         new_times = time_grid
       )
 
-      S_a0 <- surv_result$S_a0
-      S_a1 <- surv_result$S_a1
-      G_a0 <- surv_result$G_a0
-      G_a1 <- surv_result$G_a1
+      S_a0 = surv_result$S_a0
+      S_a1 = surv_result$S_a1
+      G_a0 = surv_result$G_a0
+      G_a1 = surv_result$G_a1
 
       # Fit cause-specific survival functions Sj(t|X,A)
       # Create temporary datasets with modified event indicators
-      train_data_j <- data.table::copy(train_data)
-      train_data_j[[event_col]] <- ifelse(train_data[[event_col]] == private$cause_, 1, 0)
+      train_data_j = data.table::copy(train_data)
+      train_data_j[[event_col]] = ifelse(train_data[[event_col]] == private$cause_, 1, 0)
 
-      surv_j_result <- fit_survival_functions(
+      surv_j_result = fit_survival_functions(
         data = train_data_j,
         time_col = time_col,
         event_col = event_col,
@@ -1190,14 +1246,14 @@ DoubleMLCIFJ = R6Class("DoubleMLCIFJ",
         new_times = time_grid
       )
 
-      Sj_a0 <- surv_j_result$S_a0
-      Sj_a1 <- surv_j_result$S_a1
+      Sj_a0 = surv_j_result$S_a0
+      Sj_a1 = surv_j_result$S_a1
 
       # Fit complementary cause survival functions Sjbar(t|X,A)
-      train_data_jbar <- data.table::copy(train_data)
-      train_data_jbar[[event_col]] <- ifelse(train_data[[event_col]] != 0 & train_data[[event_col]] != private$cause_, 1, 0)
+      train_data_jbar = data.table::copy(train_data)
+      train_data_jbar[[event_col]] = ifelse(train_data[[event_col]] != 0 & train_data[[event_col]] != private$cause_, 1, 0)
 
-      surv_jbar_result <- fit_survival_functions(
+      surv_jbar_result = fit_survival_functions(
         data = train_data_jbar,
         time_col = time_col,
         event_col = event_col,
@@ -1209,11 +1265,11 @@ DoubleMLCIFJ = R6Class("DoubleMLCIFJ",
         new_times = time_grid
       )
 
-      Sjbar_a0 <- surv_jbar_result$S_a0
-      Sjbar_a1 <- surv_jbar_result$S_a1
+      Sjbar_a0 = surv_jbar_result$S_a0
+      Sjbar_a1 = surv_jbar_result$S_a1
 
       # Fit propensity score P(A=1|X)
-      propensity <- fit_propensity_score(
+      propensity = fit_propensity_score(
         data = train_data,
         treatment_col = d_col,
         covariate_cols = x_cols,
@@ -1222,15 +1278,15 @@ DoubleMLCIFJ = R6Class("DoubleMLCIFJ",
       )
 
       # Winsorize survival and censoring functions
-      S_a0 <- winsorize_values(S_a0, lower = 1e-3, upper = 1 - 1e-3)
-      S_a1 <- winsorize_values(S_a1, lower = 1e-3, upper = 1 - 1e-3)
-      Sj_a0 <- winsorize_values(Sj_a0, lower = 1e-3, upper = 1 - 1e-3)
-      Sj_a1 <- winsorize_values(Sj_a1, lower = 1e-3, upper = 1 - 1e-3)
-      Sjbar_a0 <- winsorize_values(Sjbar_a0, lower = 1e-3, upper = 1 - 1e-3)
-      Sjbar_a1 <- winsorize_values(Sjbar_a1, lower = 1e-3, upper = 1 - 1e-3)
-      G_a0 <- winsorize_values(G_a0, lower = 1e-3, upper = 1 - 1e-3)
-      G_a1 <- winsorize_values(G_a1, lower = 1e-3, upper = 1 - 1e-3)
-      propensity <- winsorize_values(propensity, lower = 1e-3, upper = 1 - 1e-3)
+      S_a0 = winsorize_values(S_a0, lower = 1e-3, upper = 1 - 1e-3)
+      S_a1 = winsorize_values(S_a1, lower = 1e-3, upper = 1 - 1e-3)
+      Sj_a0 = winsorize_values(Sj_a0, lower = 1e-3, upper = 1 - 1e-3)
+      Sj_a1 = winsorize_values(Sj_a1, lower = 1e-3, upper = 1 - 1e-3)
+      Sjbar_a0 = winsorize_values(Sjbar_a0, lower = 1e-3, upper = 1 - 1e-3)
+      Sjbar_a1 = winsorize_values(Sjbar_a1, lower = 1e-3, upper = 1 - 1e-3)
+      G_a0 = winsorize_values(G_a0, lower = 1e-3, upper = 1 - 1e-3)
+      G_a1 = winsorize_values(G_a1, lower = 1e-3, upper = 1 - 1e-3)
+      propensity = winsorize_values(propensity, lower = 1e-3, upper = 1 - 1e-3)
 
       # Return all nuisance estimates
       return(list(

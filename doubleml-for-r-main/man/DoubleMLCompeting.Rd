@@ -48,6 +48,7 @@ this class and implement their own score functions.
 \item \href{#method-DoubleMLCompeting-new}{\code{DoubleMLCompeting$new()}}
 \item \href{#method-DoubleMLCompeting-get_time_grid}{\code{DoubleMLCompeting$get_time_grid()}}
 \item \href{#method-DoubleMLCompeting-validate_data}{\code{DoubleMLCompeting$validate_data()}}
+\item \href{#method-DoubleMLCompeting-fit}{\code{DoubleMLCompeting$fit()}}
 \item \href{#method-DoubleMLCompeting-clone}{\code{DoubleMLCompeting$clone()}}
 }
 }
@@ -56,7 +57,6 @@ this class and implement their own score functions.
 <ul>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="bootstrap"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-bootstrap'><code>DoubleML::DoubleML$bootstrap()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="confint"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-confint'><code>DoubleML::DoubleML$confint()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="fit"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-fit'><code>DoubleML::DoubleML$fit()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="get_params"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-get_params'><code>DoubleML::DoubleML$get_params()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="learner_names"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-learner_names'><code>DoubleML::DoubleML$learner_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="p_adjust"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-p_adjust'><code>DoubleML::DoubleML$p_adjust()</code></a></span></li>
@@ -198,6 +198,21 @@ Whether to print validation messages. Default is TRUE.}
 }
 \subsection{Returns}{
 List with validation results.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DoubleMLCompeting-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-DoubleMLCompeting-fit}{}}}
+\subsection{Method \code{fit()}}{
+Fit the competing risks model. Overrides base class fit() to bypass
+psi_a/psi_b score decomposition, which does not apply to competing risks.
+Estimation goes directly: UEIF -> extract_average -> coef/SE.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLCompeting$fit()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+self
 }
 }
 \if{html}{\out{<hr>}}

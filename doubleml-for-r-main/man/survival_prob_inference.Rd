@@ -4,30 +4,16 @@
 \alias{survival_prob_inference}
 \title{Survival Probability Inference}
 \usage{
-survival_prob_inference(
-  npath,
-  train.ueif.a1,
-  train.ueif.a0,
-  estimation.ueif.a1,
-  estimation.ueif.a0,
-  train.time,
-  estimation.time
-)
+survival_prob_inference(npath, ueif.a1.list, ueif.a0.list, time.list)
 }
 \arguments{
 \item{npath}{Number of bootstrap paths for confidence bands}
 
-\item{train.ueif.a1}{UEIF matrix for treatment a=1 from training set}
+\item{ueif.a1.list}{List of K UEIF matrices for treatment a=1 (one per fold)}
 
-\item{train.ueif.a0}{UEIF matrix for treatment a=0 from training set}
+\item{ueif.a0.list}{List of K UEIF matrices for treatment a=0 (one per fold)}
 
-\item{estimation.ueif.a1}{UEIF matrix for treatment a=1 from estimation set}
-
-\item{estimation.ueif.a0}{UEIF matrix for treatment a=0 from estimation set}
-
-\item{train.time}{Time points from training set}
-
-\item{estimation.time}{Time points from estimation set}
+\item{time.list}{List of K time grid vectors (one per fold)}
 }
 \value{
 Data frame with point estimates, confidence intervals, and confidence bands

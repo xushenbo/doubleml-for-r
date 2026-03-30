@@ -83,20 +83,20 @@ DoubleMLSurvival = R6Class("DoubleMLSurvival",
     #' @param apply_cross_fitting (`logical(1)`) \cr
     #' Whether to apply cross-fitting. Default is TRUE.
     initialize = function(data,
-                          ml_g_surv,
-                          ml_g_cens,
-                          ml_m,
-                          admin_cens,
-                          time_col,
-                          event_col,
-                          freq_time = NULL,
-                          ml_framework = "SuperLearner",
-                          n_folds = 5,
-                          n_rep = 1,
-                          score = "ueif",
-                          dml_procedure = "dml2",
-                          draw_sample_splitting = TRUE,
-                          apply_cross_fitting = TRUE) {
+      ml_g_surv,
+      ml_g_cens,
+      ml_m,
+      admin_cens,
+      time_col,
+      event_col,
+      freq_time = NULL,
+      ml_framework = "SuperLearner",
+      n_folds = 5,
+      n_rep = 1,
+      score = "ueif",
+      dml_procedure = "dml2",
+      draw_sample_splitting = TRUE,
+      apply_cross_fitting = TRUE) {
 
       # Prevent direct instantiation of abstract base class
       if (identical(class(self)[1], "DoubleMLSurvival")) {
@@ -104,16 +104,16 @@ DoubleMLSurvival = R6Class("DoubleMLSurvival",
       }
 
       # Store survival-specific parameters
-      private$admin_cens_ <- admin_cens
-      private$time_col_ <- time_col
-      private$event_col_ <- event_col
-      private$freq_time_ <- freq_time
-      private$ml_framework_ <- ml_framework
+      private$admin_cens_ = admin_cens
+      private$time_col_ = time_col
+      private$event_col_ = event_col
+      private$freq_time_ = freq_time
+      private$ml_framework_ = ml_framework
 
       # Store ML learners
-      private$ml_g_surv_ <- ml_g_surv
-      private$ml_g_cens_ <- ml_g_cens
-      private$ml_m_ <- ml_m
+      private$ml_g_surv_ = ml_g_surv
+      private$ml_g_cens_ = ml_g_cens
+      private$ml_m_ = ml_m
 
       # Check data structure
       private$check_data(data)
@@ -145,17 +145,17 @@ DoubleMLSurvival = R6Class("DoubleMLSurvival",
     #' @return Numeric vector of time points.
     get_time_grid = function(data_subset = NULL) {
       if (is.null(data_subset)) {
-        data_subset <- self$data$data
+        data_subset = self$data$data
       }
 
       if (is.null(private$freq_time_)) {
-        time_grid <- sort(unique(data_subset[[private$time_col_]]))
+        time_grid = sort(unique(data_subset[[private$time_col_]]))
       } else {
-        time_grid <- seq(private$freq_time_, private$admin_cens_, private$freq_time_)
+        time_grid = seq(private$freq_time_, private$admin_cens_, private$freq_time_)
       }
 
       # Ensure time grid doesn't exceed admin_cens
-      time_grid <- time_grid[time_grid <= private$admin_cens_]
+      time_grid = time_grid[time_grid <= private$admin_cens_]
       return(time_grid)
     },
 
@@ -167,64 +167,64 @@ DoubleMLSurvival = R6Class("DoubleMLSurvival",
     #'
     #' @return List with validation results if detailed=TRUE, otherwise invisible.
     validate_data = function(detailed = FALSE) {
-      data <- self$data$data
-      results <- list()
+      data = self$data$data
+      results = list()
 
       # Check for missing values
-      results$missing_time <- sum(is.na(data[[private$time_col_]]))
-      results$missing_event <- sum(is.na(data[[private$event_col_]]))
-      results$missing_treatment <- sum(is.na(data[[self$data$d_cols]]))
+      results$missing_time = sum(is.na(data[[private$time_col_]]))
+      results$missing_event = sum(is.na(data[[private$event_col_]]))
+      results$missing_treatment = sum(is.na(data[[self$data$d_cols]]))
 
       # Check time values
-      results$negative_times <- sum(data[[private$time_col_]] <= 0, na.rm = TRUE)
-      results$times_exceed_admin_cens <- sum(data[[private$time_col_]] > private$admin_cens_, na.rm = TRUE)
+      results$negative_times = sum(data[[private$time_col_]] <= 0, na.rm = TRUE)
+      results$times_exceed_admin_cens = sum(data[[private$time_col_]] > private$admin_cens_, na.rm = TRUE)
 
       # Check event values
-      unique_events <- unique(data[[private$event_col_]])
-      results$event_values <- sort(unique_events[!is.na(unique_events)])
+      unique_events = unique(data[[private$event_col_]])
+      results$event_values = sort(unique_events[!is.na(unique_events)])
 
       # Check treatment values
-      unique_treatments <- unique(data[[self$data$d_cols]])
-      results$treatment_values <- sort(unique_treatments[!is.na(unique_treatments)])
+      unique_treatments = unique(data[[self$data$d_cols]])
+      results$treatment_values = sort(unique_treatments[!is.na(unique_treatments)])
 
       # Calculate summary statistics
-      results$n_total <- nrow(data)
-      results$n_events <- sum(data[[private$event_col_]] != 0, na.rm = TRUE)
-      results$n_censored <- sum(data[[private$event_col_]] == 0, na.rm = TRUE)
-      results$censoring_rate <- results$n_censored / results$n_total
+      results$n_total = nrow(data)
+      results$n_events = sum(data[[private$event_col_]] != 0, na.rm = TRUE)
+      results$n_censored = sum(data[[private$event_col_]] == 0, na.rm = TRUE)
+      results$censoring_rate = results$n_censored / results$n_total
 
       # Treatment group sizes
-      results$n_treated <- sum(data[[self$data$d_cols]] == 1, na.rm = TRUE)
-      results$n_control <- sum(data[[self$data$d_cols]] == 0, na.rm = TRUE)
+      results$n_treated = sum(data[[self$data$d_cols]] == 1, na.rm = TRUE)
+      results$n_control = sum(data[[self$data$d_cols]] == 0, na.rm = TRUE)
 
       # Warnings and errors
-      warnings <- character(0)
-      errors <- character(0)
+      warnings = character(0)
+      errors = character(0)
 
       if (results$missing_time > 0) {
-        errors <- c(errors, paste("Missing values in time column:", results$missing_time))
+        errors = c(errors, paste("Missing values in time column:", results$missing_time))
       }
       if (results$missing_event > 0) {
-        errors <- c(errors, paste("Missing values in event column:", results$missing_event))
+        errors = c(errors, paste("Missing values in event column:", results$missing_event))
       }
       if (results$missing_treatment > 0) {
-        errors <- c(errors, paste("Missing values in treatment column:", results$missing_treatment))
+        errors = c(errors, paste("Missing values in treatment column:", results$missing_treatment))
       }
       if (results$negative_times > 0) {
-        errors <- c(errors, paste("Non-positive time values:", results$negative_times))
+        errors = c(errors, paste("Non-positive time values:", results$negative_times))
       }
       if (!all(results$treatment_values %in% c(0, 1))) {
-        errors <- c(errors, "Treatment values must be 0 or 1")
+        errors = c(errors, "Treatment values must be 0 or 1")
       }
       if (results$censoring_rate > 0.8) {
-        warnings <- c(warnings, paste("High censoring rate:", round(results$censoring_rate * 100, 1), "%"))
+        warnings = c(warnings, paste("High censoring rate:", round(results$censoring_rate * 100, 1), "%"))
       }
       if (min(results$n_treated, results$n_control) < 50) {
-        warnings <- c(warnings, "Small treatment group sizes may affect performance")
+        warnings = c(warnings, "Small treatment group sizes may affect performance")
       }
 
-      results$warnings <- warnings
-      results$errors <- errors
+      results$warnings = warnings
+      results$errors = errors
 
       # Print warnings
       if (length(warnings) > 0) {
@@ -243,6 +243,26 @@ DoubleMLSurvival = R6Class("DoubleMLSurvival",
       } else {
         return(invisible(results))
       }
+    },
+
+    #' @description
+    #' Fit the survival analysis model. Overrides base class fit() to bypass
+    #' psi_a/psi_b score decomposition, which does not apply to survival analysis.
+    #' Estimation goes directly: UEIF -> extract_average -> coef/SE.
+    #'
+    #' @return self
+    fit = function() {
+      for (i_rep in 1:self$n_rep) {
+        private$i_rep = i_rep
+        for (i_treat in 1:self$data$n_treat) {
+          private$i_treat = i_treat
+          if (self$data$n_treat > 1) {
+            self$data$set_data_model(self$data$d_cols[i_treat])
+          }
+          private$nuisance_est(private$get__smpls())
+        }
+      }
+      invisible(self)
     }
   ),
 
@@ -286,7 +306,7 @@ DoubleMLSurvival = R6Class("DoubleMLSurvival",
     },
 
     check_score = function(score) {
-      valid_scores <- "ueif"
+      valid_scores = "ueif"
       if (!score %in% valid_scores) {
         stop(paste("Invalid score. Valid scores:", paste(valid_scores, collapse = ", ")))
       }
@@ -298,7 +318,7 @@ DoubleMLSurvival = R6Class("DoubleMLSurvival",
 
       # Fit both survival and censoring functions using survSuperLearner
       # Single call returns both event.SL.predict and cens.SL.predict
-      surv_results <- fit_survival_functions(
+      surv_results = fit_survival_functions(
         data = train_data,
         time_col = private$time_col_,
         event_col = private$event_col_,
@@ -311,7 +331,7 @@ DoubleMLSurvival = R6Class("DoubleMLSurvival",
       )
 
       # Fit propensity score using SuperLearner
-      propensity <- fit_propensity_score(
+      propensity = fit_propensity_score(
         data = train_data,
         treatment_col = self$data$d_cols,
         covariate_cols = self$data$x_cols,
@@ -320,7 +340,7 @@ DoubleMLSurvival = R6Class("DoubleMLSurvival",
       )
 
       # Winsorize to avoid numerical issues
-      propensity <- winsorize_values(propensity, lower = 1e-3, upper = 1 - 1e-3)
+      propensity = winsorize_values(propensity, lower = 1e-3, upper = 1 - 1e-3)
 
       return(list(
         S_a0 = winsorize_values(surv_results$S_a0, lower = 1e-3, upper = 1 - 1e-3),

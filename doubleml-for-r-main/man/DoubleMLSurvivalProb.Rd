@@ -2,42 +2,9 @@
 % Please edit documentation in R/double_ml_survival_prob.R
 \name{DoubleMLSurvivalProb}
 \alias{DoubleMLSurvivalProb}
-\alias{double_ml_survival_prob}
 \title{Double machine learning for survival probability}
 \format{
 \link[R6:R6Class]{R6::R6Class} object inheriting from \link{DoubleML}.
-}
-\arguments{
-\item{id}{Vector of individual identifiers}
-
-\item{a}{Treatment assignment vector (0/1)}
-
-\item{time}{Observed time (min of event time and censoring time)}
-
-\item{event}{Event indicator (0=censored, 1+=event)}
-
-\item{bw}{Balancing weights (inverse propensity weights)}
-
-\item{tilt}{Tilting weights for target population}
-
-\item{G.a0}{Censoring survival function matrix for A=0 (n × n_times)}
-
-\item{G.a1}{Censoring survival function matrix for A=1 (n × n_times)}
-
-\item{S.a0}{Event survival function matrix for A=0 (n × n_times)}
-
-\item{S.a1}{Event survival function matrix for A=1 (n × n_times)}
-
-\item{freq.time}{Time grid frequency. If NULL, uses unique event times}
-
-\item{admin.cens}{Administrative censoring time}
-}
-\value{
-List with two components:
-\describe{
-\item{ueif.a1}{Influence function matrix for A=1 (n × n_times)}
-\item{ueif.a0}{Influence function matrix for A=0 (n × n_times)}
-}
 }
 \description{
 Double machine learning for survival probability estimation with censoring.
@@ -55,19 +22,9 @@ The key nuisance functions are:
 \item Censoring survival functions: G(t|X,A) = P(C > t|X,A)
 \item Event survival functions: S(t|X,A) = P(T > t|X,A)
 }
-
-The function implements a 3-term efficient influence function decomposition:
-\itemize{
-\item Term 1: Observed survival indicator weighted by balancing weights
-\item Term 2: Predicted survival function weighted by tilting weights
-\item Term 3: Censoring martingale correction for doubly robust property
-}
-
-The UEIF ensures the estimator is doubly robust: consistent if either the
-outcome model (S,G) or the propensity model is correctly specified.
 }
 \examples{
-\donttest{
+\dontrun{
 # Example with SuperLearner framework
 library(DoubleML)
 library(SuperLearner)
@@ -75,20 +32,20 @@ library(survSuperLearner)
 
 # Create survival data
 set.seed(123)
-n <- 500
-x1 <- rnorm(n)
-x2 <- rnorm(n)
-a <- rbinom(n, 1, plogis(0.5 * x1 + 0.3 * x2))
+n = 500
+x1 = rnorm(n)
+x2 = rnorm(n)
+a = rbinom(n, 1, plogis(0.5 * x1 + 0.3 * x2))
 
 # Generate survival times
-lambda <- exp(0.5 * a + 0.2 * x1 + 0.1 * x2)
-time <- rexp(n, lambda)
-cens_time <- runif(n, 0, 10)
-observed_time <- pmin(time, cens_time)
-event <- as.numeric(time <= cens_time)
+lambda = exp(0.5 * a + 0.2 * x1 + 0.1 * x2)
+time = rexp(n, lambda)
+cens_time = runif(n, 0, 10)
+observed_time = pmin(time, cens_time)
+event = as.numeric(time <= cens_time)
 
 # Create data frame
-data <- data.frame(
+data = data.frame(
   time = observed_time,
   event = event,
   a = a,
@@ -97,7 +54,7 @@ data <- data.frame(
 )
 
 # Create DoubleMLData
-obj_dml_data <- DoubleMLSurvivalData$new(
+obj_dml_data = DoubleMLSurvivalData$new(
   data,
   time_col = "time",
   event_col = "event",
@@ -106,12 +63,12 @@ obj_dml_data <- DoubleMLSurvivalData$new(
 )
 
 # Define learners
-ml_g_surv <- "survSL.km"  # For survival functions
-ml_g_cens <- "survSL.km"  # For censoring functions
-ml_m <- "SL.glm"          # For propensity score
+ml_g_surv = "survSL.km" # For survival functions
+ml_g_cens = "survSL.km" # For censoring functions
+ml_m = "SL.glm" # For propensity score
 
 # Create and fit model
-dml_surv_prob <- DoubleMLSurvivalProb$new(
+dml_surv_prob = DoubleMLSurvivalProb$new(
   obj_dml_data,
   ml_g_surv,
   ml_g_cens,
@@ -121,13 +78,6 @@ dml_surv_prob <- DoubleMLSurvivalProb$new(
 dml_surv_prob$fit()
 dml_surv_prob$summary()
 }
-Survival Probability Censoring Martingale Estimation Function
-
-Core statistical estimation function for survival probability using efficient
-influence function (UEIF) based approach with censoring martingale theory.
-This function computes the doubly robust efficient influence function for
-survival probability estimation with right-censored data.
-
 }
 \seealso{
 Other DoubleML: 
@@ -136,20 +86,22 @@ Other DoubleML:
 \code{\link{DoubleMLIRM}},
 \code{\link{DoubleMLPLIV}},
 \code{\link{DoubleMLPLR}},
+\code{\link{DoubleMLRMST}},
 \code{\link{DoubleMLSSM}},
 \code{\link{DoubleMLSurvival}}
 }
 \concept{DoubleML}
-\keyword{internal}
 \section{Super classes}{
 \code{\link[DoubleML:DoubleML]{DoubleML::DoubleML}} -> \code{\link[DoubleML:DoubleMLSurvival]{DoubleML::DoubleMLSurvival}} -> \code{DoubleMLSurvivalProb}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{coef}}{Treatment effect estimate}
+\item{\code{coef}}{Treatment effect estimate (from extract_average, not DML score).
+For multiple tau, returns the first tau's estimate; use survival_prob_estimates for all.}
 
-\item{\code{se}}{Standard error of treatment effect estimate}
+\item{\code{se}}{Standard error of treatment effect estimate (from extract_average).
+For multiple tau, returns the first tau's SE; use survival_prob_estimates for all.}
 
 \item{\code{tau}}{Evaluation time point(s)}
 
@@ -172,7 +124,6 @@ Other DoubleML:
 <ul>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="bootstrap"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-bootstrap'><code>DoubleML::DoubleML$bootstrap()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="confint"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-confint'><code>DoubleML::DoubleML$confint()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="fit"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-fit'><code>DoubleML::DoubleML$fit()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="get_params"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-get_params'><code>DoubleML::DoubleML$get_params()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="learner_names"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-learner_names'><code>DoubleML::DoubleML$learner_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="p_adjust"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-p_adjust'><code>DoubleML::DoubleML$p_adjust()</code></a></span></li>
@@ -183,6 +134,7 @@ Other DoubleML:
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="split_samples"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-split_samples'><code>DoubleML::DoubleML$split_samples()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="summary"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-summary'><code>DoubleML::DoubleML$summary()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleML" data-id="tune"><a href='../../DoubleML/html/DoubleML.html#method-DoubleML-tune'><code>DoubleML::DoubleML$tune()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleMLSurvival" data-id="fit"><a href='../../DoubleML/html/DoubleMLSurvival.html#method-DoubleMLSurvival-fit'><code>DoubleML::DoubleMLSurvival$fit()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleMLSurvival" data-id="get_time_grid"><a href='../../DoubleML/html/DoubleMLSurvival.html#method-DoubleMLSurvival-get_time_grid'><code>DoubleML::DoubleMLSurvival$get_time_grid()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="DoubleML" data-topic="DoubleMLSurvival" data-id="validate_data"><a href='../../DoubleML/html/DoubleMLSurvival.html#method-DoubleMLSurvival-validate_data'><code>DoubleML::DoubleMLSurvival$validate_data()</code></a></span></li>
 </ul>
@@ -279,17 +231,14 @@ Whether to apply cross-fitting. Default is TRUE.}
 \subsection{Method \code{get_inference_curve()}}{
 Get full survival probability inference curve with confidence bands.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DoubleMLSurvivalProb$get_inference_curve(level = 0.95, n_bootstrap = 500)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DoubleMLSurvivalProb$get_inference_curve(npath = 100)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{level}}{(\code{numeric(1)}) \cr
-Confidence level. Default is 0.95.}
-
-\item{\code{n_bootstrap}}{(\code{integer(1)}) \cr
-Number of bootstrap samples for confidence bands. Default is 500.}
+\item{\code{npath}}{(\code{integer(1)}) \cr
+Number of bootstrap paths for confidence bands. Default is 100.}
 }
 \if{html}{\out{</div>}}
 }

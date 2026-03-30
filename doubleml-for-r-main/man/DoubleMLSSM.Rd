@@ -78,6 +78,7 @@ Other DoubleML:
 \code{\link{DoubleMLIRM}},
 \code{\link{DoubleMLPLIV}},
 \code{\link{DoubleMLPLR}},
+\code{\link{DoubleMLRMST}},
 \code{\link{DoubleMLSurvival}},
 \code{\link{DoubleMLSurvivalProb}}
 }
@@ -160,7 +161,7 @@ extension packages \href{https://mlr3learners.mlr-org.com/}{mlr3learners} or
 \href{https://mlr3extralearners.mlr-org.com/}{mlr3extralearners}.
 Alternatively, a \code{\link[mlr3:Learner]{Learner}} object with public field
 \code{task_type = "regr"} can be passed, for example of class
-\code{\link[mlr3pipelines:GraphLearner]{GraphLearner}}. The learner can possibly
+\code{\link[mlr3pipelines:mlr_learners_graph]{GraphLearner}}. The learner can possibly
 be passed with specified parameters, for example
 \code{lrn("regr.cv_glmnet", s = "lambda.min")}. \cr
 \code{ml_g} refers to the nuisance function \eqn{g_0(S,D,X) = E[Y|S,D,X]}.}
@@ -173,7 +174,7 @@ extension packages \href{https://mlr3learners.mlr-org.com/}{mlr3learners} or
 \href{https://mlr3extralearners.mlr-org.com/}{mlr3extralearners}.
 Alternatively, a \code{\link[mlr3:Learner]{Learner}} object with public field
 \code{task_type = "classif"} can be passed, for example of class
-\code{\link[mlr3pipelines:GraphLearner]{GraphLearner}}. The learner can possibly
+\code{\link[mlr3pipelines:mlr_learners_graph]{GraphLearner}}. The learner can possibly
 be passed with specified parameters, for example
 \code{lrn("classif.cv_glmnet", s = "lambda.min")}. \cr
 \code{ml_pi} refers to the nuisance function \eqn{pi_0(D,X) = Pr[S=1|D,X]}.}
@@ -187,7 +188,7 @@ extension packages \href{https://mlr3learners.mlr-org.com/}{mlr3learners} or
 \href{https://mlr3extralearners.mlr-org.com/}{mlr3extralearners}.
 Alternatively, a \code{\link[mlr3:Learner]{Learner}} object with public field
 \code{task_type = "classif"} can be passed, for example of class
-\code{\link[mlr3pipelines:GraphLearner]{GraphLearner}}. The learner can possibly
+\code{\link[mlr3pipelines:mlr_learners_graph]{GraphLearner}}. The learner can possibly
 be passed with specified parameters, for example
 \code{lrn("classif.cv_glmnet", s = "lambda.min")}. \cr
 \code{ml_m} refers to the nuisance function \eqn{m_0(X) = Pr[D=1|X]}.}

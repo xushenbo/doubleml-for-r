@@ -80,23 +80,23 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
     #' @param apply_cross_fitting (`logical(1)`) \cr
     #' Whether to apply cross-fitting. Default is TRUE.
     initialize = function(data,
-                          ml_g_surv,
-                          ml_g_surv_j,
-                          ml_g_surv_jbar,
-                          ml_g_cens,
-                          ml_m,
-                          admin_cens,
-                          time_col,
-                          event_col,
-                          cause = 1,
-                          freq_time = NULL,
-                          ml_framework = "SuperLearner",
-                          n_folds = 5,
-                          n_rep = 1,
-                          score = "ueif",
-                          dml_procedure = "dml2",
-                          draw_sample_splitting = TRUE,
-                          apply_cross_fitting = TRUE) {
+      ml_g_surv,
+      ml_g_surv_j,
+      ml_g_surv_jbar,
+      ml_g_cens,
+      ml_m,
+      admin_cens,
+      time_col,
+      event_col,
+      cause = 1,
+      freq_time = NULL,
+      ml_framework = "SuperLearner",
+      n_folds = 5,
+      n_rep = 1,
+      score = "ueif",
+      dml_procedure = "dml2",
+      draw_sample_splitting = TRUE,
+      apply_cross_fitting = TRUE) {
 
       # Prevent direct instantiation of abstract base class
       if (identical(class(self)[1], "DoubleMLCompeting")) {
@@ -104,19 +104,19 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
       }
 
       # Store competing risks-specific parameters
-      private$admin_cens_ <- admin_cens
-      private$time_col_ <- time_col
-      private$event_col_ <- event_col
-      private$cause_ <- cause
-      private$freq_time_ <- freq_time
-      private$ml_framework_ <- ml_framework
+      private$admin_cens_ = admin_cens
+      private$time_col_ = time_col
+      private$event_col_ = event_col
+      private$cause_ = cause
+      private$freq_time_ = freq_time
+      private$ml_framework_ = ml_framework
 
       # Store ML learners
-      private$ml_g_surv_ <- ml_g_surv
-      private$ml_g_surv_j_ <- ml_g_surv_j
-      private$ml_g_surv_jbar_ <- ml_g_surv_jbar
-      private$ml_g_cens_ <- ml_g_cens
-      private$ml_m_ <- ml_m
+      private$ml_g_surv_ = ml_g_surv
+      private$ml_g_surv_j_ = ml_g_surv_j
+      private$ml_g_surv_jbar_ = ml_g_surv_jbar
+      private$ml_g_cens_ = ml_g_cens
+      private$ml_m_ = ml_m
 
       # Check data structure (pass data directly, self$data not set yet)
       private$check_data(data)
@@ -148,13 +148,13 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
     #' @return Numeric vector of time points.
     get_time_grid = function(data_subset = NULL) {
       if (is.null(data_subset)) {
-        data_subset <- self$data$data
+        data_subset = self$data$data
       }
 
       if (is.null(private$freq_time_)) {
-        time_grid <- sort(unique(data_subset[[private$time_col_]]))
+        time_grid = sort(unique(data_subset[[private$time_col_]]))
       } else {
-        time_grid <- seq(private$freq_time_, private$admin_cens_, private$freq_time_)
+        time_grid = seq(private$freq_time_, private$admin_cens_, private$freq_time_)
       }
 
       return(time_grid)
@@ -169,6 +169,26 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
     validate_data = function(print_messages = TRUE) {
       # Use self$data$data after initialization is complete
       private$validate_data_internal(self$data, print_messages)
+    },
+
+    #' @description
+    #' Fit the competing risks model. Overrides base class fit() to bypass
+    #' psi_a/psi_b score decomposition, which does not apply to competing risks.
+    #' Estimation goes directly: UEIF -> extract_average -> coef/SE.
+    #'
+    #' @return self
+    fit = function() {
+      for (i_rep in 1:self$n_rep) {
+        private$i_rep = i_rep
+        for (i_treat in 1:self$data$n_treat) {
+          private$i_treat = i_treat
+          if (self$data$n_treat > 1) {
+            self$data$set_data_model(self$data$d_cols[i_treat])
+          }
+          private$nuisance_est(private$get__smpls())
+        }
+      }
+      invisible(self)
     }
   ),
 
@@ -230,10 +250,10 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
 
     # Internal validation that works with data parameter
     validate_data_internal = function(data, print_messages = TRUE) {
-      dt <- data$data
-      time_col <- private$time_col_
-      event_col <- private$event_col_
-      d_col <- data$d_cols
+      dt = data$data
+      time_col = private$time_col_
+      event_col = private$event_col_
+      d_col = data$d_cols
 
       # Check for missing values
       if (any(is.na(dt[[time_col]]))) {
@@ -249,7 +269,7 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
       }
 
       # Check event values (must be 0, 1, 2, ...)
-      unique_events <- unique(dt[[event_col]])
+      unique_events = unique(dt[[event_col]])
       if (length(unique_events) == 0) {
         stop("Event column is empty")
       }
@@ -263,17 +283,17 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
       }
 
       # Calculate censoring rates
-      n_obs <- nrow(dt)
-      n_censored <- sum(dt[[event_col]] == 0)
-      censoring_rate <- n_censored / n_obs
+      n_obs = nrow(dt)
+      n_censored = sum(dt[[event_col]] == 0)
+      censoring_rate = n_censored / n_obs
 
       # Count events by cause
-      n_cause1 <- sum(dt[[event_col]] == 1)
-      n_cause2 <- sum(dt[[event_col]] == 2)
+      n_cause1 = sum(dt[[event_col]] == 1)
+      n_cause2 = sum(dt[[event_col]] == 2)
 
       # Sample sizes by treatment
-      n_treated <- sum(dt[[d_col]] == 1)
-      n_control <- sum(dt[[d_col]] == 0)
+      n_treated = sum(dt[[d_col]] == 1)
+      n_control = sum(dt[[d_col]] == 0)
 
       if (print_messages) {
         message(sprintf("Total observations: %d", n_obs))
@@ -298,14 +318,14 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
     # Common nuisance estimation for competing risks (SuperLearner framework)
     ml_nuisance_est_superlearner = function(train_data, test_data, time_grid) {
       # Extract column names
-      time_col <- private$time_col_
-      event_col <- private$event_col_
-      d_col <- self$data$d_cols
-      x_cols <- self$data$x_cols
+      time_col = private$time_col_
+      event_col = private$event_col_
+      d_col = self$data$d_cols
+      x_cols = self$data$x_cols
 
       # Fit overall event survival functions S(t|X,A) and censoring G(t|X,A)
       # Single call returns both event.SL.predict and cens.SL.predict
-      surv_result <- fit_survival_functions(
+      surv_result = fit_survival_functions(
         data = train_data,
         time_col = time_col,
         event_col = event_col,
@@ -317,17 +337,17 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
         new_times = time_grid
       )
 
-      S_a0 <- surv_result$S_a0
-      S_a1 <- surv_result$S_a1
-      G_a0 <- surv_result$G_a0
-      G_a1 <- surv_result$G_a1
+      S_a0 = surv_result$S_a0
+      S_a1 = surv_result$S_a1
+      G_a0 = surv_result$G_a0
+      G_a1 = surv_result$G_a1
 
       # Fit cause-specific survival functions Sj(t|X,A)
       # Create temporary datasets with modified event indicators
-      train_data_j <- data.table::copy(train_data)
-      train_data_j[[event_col]] <- ifelse(train_data[[event_col]] == private$cause_, 1, 0)
+      train_data_j = data.table::copy(train_data)
+      train_data_j[[event_col]] = ifelse(train_data[[event_col]] == private$cause_, 1, 0)
 
-      surv_j_result <- fit_survival_functions(
+      surv_j_result = fit_survival_functions(
         data = train_data_j,
         time_col = time_col,
         event_col = event_col,
@@ -339,14 +359,14 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
         new_times = time_grid
       )
 
-      Sj_a0 <- surv_j_result$S_a0
-      Sj_a1 <- surv_j_result$S_a1
+      Sj_a0 = surv_j_result$S_a0
+      Sj_a1 = surv_j_result$S_a1
 
       # Fit complementary cause survival functions Sjbar(t|X,A)
-      train_data_jbar <- data.table::copy(train_data)
-      train_data_jbar[[event_col]] <- ifelse(train_data[[event_col]] != 0 & train_data[[event_col]] != private$cause_, 1, 0)
+      train_data_jbar = data.table::copy(train_data)
+      train_data_jbar[[event_col]] = ifelse(train_data[[event_col]] != 0 & train_data[[event_col]] != private$cause_, 1, 0)
 
-      surv_jbar_result <- fit_survival_functions(
+      surv_jbar_result = fit_survival_functions(
         data = train_data_jbar,
         time_col = time_col,
         event_col = event_col,
@@ -358,11 +378,11 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
         new_times = time_grid
       )
 
-      Sjbar_a0 <- surv_jbar_result$S_a0
-      Sjbar_a1 <- surv_jbar_result$S_a1
+      Sjbar_a0 = surv_jbar_result$S_a0
+      Sjbar_a1 = surv_jbar_result$S_a1
 
       # Fit propensity score P(A=1|X)
-      propensity <- fit_propensity_score(
+      propensity = fit_propensity_score(
         data = train_data,
         treatment_col = d_col,
         covariate_cols = x_cols,
@@ -371,15 +391,15 @@ DoubleMLCompeting = R6Class("DoubleMLCompeting",
       )
 
       # Winsorize survival and censoring functions
-      S_a0 <- winsorize_values(S_a0, lower = 1e-3, upper = 1 - 1e-3)
-      S_a1 <- winsorize_values(S_a1, lower = 1e-3, upper = 1 - 1e-3)
-      Sj_a0 <- winsorize_values(Sj_a0, lower = 1e-3, upper = 1 - 1e-3)
-      Sj_a1 <- winsorize_values(Sj_a1, lower = 1e-3, upper = 1 - 1e-3)
-      Sjbar_a0 <- winsorize_values(Sjbar_a0, lower = 1e-3, upper = 1 - 1e-3)
-      Sjbar_a1 <- winsorize_values(Sjbar_a1, lower = 1e-3, upper = 1 - 1e-3)
-      G_a0 <- winsorize_values(G_a0, lower = 1e-3, upper = 1 - 1e-3)
-      G_a1 <- winsorize_values(G_a1, lower = 1e-3, upper = 1 - 1e-3)
-      propensity <- winsorize_values(propensity, lower = 1e-3, upper = 1 - 1e-3)
+      S_a0 = winsorize_values(S_a0, lower = 1e-3, upper = 1 - 1e-3)
+      S_a1 = winsorize_values(S_a1, lower = 1e-3, upper = 1 - 1e-3)
+      Sj_a0 = winsorize_values(Sj_a0, lower = 1e-3, upper = 1 - 1e-3)
+      Sj_a1 = winsorize_values(Sj_a1, lower = 1e-3, upper = 1 - 1e-3)
+      Sjbar_a0 = winsorize_values(Sjbar_a0, lower = 1e-3, upper = 1 - 1e-3)
+      Sjbar_a1 = winsorize_values(Sjbar_a1, lower = 1e-3, upper = 1 - 1e-3)
+      G_a0 = winsorize_values(G_a0, lower = 1e-3, upper = 1 - 1e-3)
+      G_a1 = winsorize_values(G_a1, lower = 1e-3, upper = 1 - 1e-3)
+      propensity = winsorize_values(propensity, lower = 1e-3, upper = 1 - 1e-3)
 
       # Return all nuisance estimates
       return(list(

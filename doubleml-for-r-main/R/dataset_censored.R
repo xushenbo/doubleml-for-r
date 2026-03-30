@@ -61,7 +61,7 @@
 #'
 #' @export
 make_survival_data = function(n_obs = 2000, admin_cens = 10, time_grid = 0.01,
-                               return_type = "DoubleMLData") {
+  return_type = "DoubleMLData") {
 
   assert_choice(
     return_type,
@@ -251,7 +251,7 @@ make_survival_data = function(n_obs = 2000, admin_cens = 10, time_grid = 0.01,
 #'
 #' @export
 make_competing_data = function(n_obs = 2000, admin_cens = 10, time_grid = 0.01,
-                               return_type = "DoubleMLData") {
+  return_type = "DoubleMLData") {
 
   assert_choice(
     return_type,
